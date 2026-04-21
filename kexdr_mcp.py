@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# 文件名: kexdr_server.py
+
 
 import json
 import os
@@ -13,25 +13,25 @@ import sqlite3
 import traceback
 from datetime import datetime
 
-# 依赖库检查
+
 try:
     import igraph as ig
     import leidenalg
 
     LEIDEN_AVAILABLE = True
 except ImportError:
-    # 仅作为警告
+    
     LEIDEN_AVAILABLE = False
 
 from mcp.server.fastmcp import FastMCP
 
-# 抑制警告
+
 warnings.filterwarnings("ignore")
 
 mcp = FastMCP("KeXDR-Server")
 
 # ============================================================================
-# 1. HTML 前端模板 (Legend V3: Universal Entities & TimeLinks)
+# 1. HTML (Legend V3: Universal Entities & TimeLinks)
 # ============================================================================
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -415,12 +415,12 @@ class Hippocampus:
     def __init__(self, db_path="kexdr_memory.db"):
         self.conn = sqlite3.connect(db_path)
         self.cursor = self.conn.cursor()
-        # 优化：为 key 和 timestamp 建立索引，加快 Recall 和 Prune 的速度
+       
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS artifacts (
             key TEXT, event_id TEXT, timestamp REAL, desc TEXT, payload TEXT, PRIMARY KEY (key, event_id))''')
         self.cursor.execute("CREATE INDEX IF NOT EXISTS idx_ts ON artifacts (timestamp)")
         self.cursor.execute("CREATE INDEX IF NOT EXISTS idx_key ON artifacts (key)")
-        # [Table 2 - 新增] Lineage (用于进程寻亲)
+        
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS lineage (
                     child_id TEXT PRIMARY KEY, parent_id TEXT, parent_desc TEXT, ts REAL)''')
 
@@ -429,10 +429,10 @@ class Hippocampus:
     def recall(self, keys):
         results = []
         if not keys: return results
-        # 使用 IN 查询优化批量检索
+       
         placeholders = ','.join('?' for _ in keys)
         try:
-            # 限制每个 Key 最多返回最近的 5 条记录，防止爆炸
+            
             query = f"""
                 SELECT event_id, timestamp, desc, payload, key 
                 FROM artifacts 
@@ -440,10 +440,10 @@ class Hippocampus:
                 ORDER BY timestamp DESC
             """
             self.cursor.execute(query, tuple(keys))
-            # 在应用层做 Limit 逻辑或者稍微放宽 SQL
+         
             rows = self.cursor.fetchall()
 
-            # 简单的内存过滤，确保每个 Key 不过多
+            
             key_counts = {}
             for r in rows:
                 k = r[4]
@@ -471,44 +471,41 @@ class Hippocampus:
         except:
             pass
 
-    # [修复版] 清理功能 - 位于 Hippocampus 类内部
+    
     def prune_old_memories(self, days_retention=7):
         """
-        删除超过 days_retention 天的历史记录，并整理数据库碎片
+        
         """
         try:
             current_ts = datetime.now().timestamp()
-            # 计算截止时间戳
+          
             cutoff_ts = current_ts - (days_retention * 24 * 3600)
 
-            # 1. 执行删除
+           
             self.cursor.execute("DELETE FROM artifacts WHERE timestamp < ?", (cutoff_ts,))
             deleted_count = self.cursor.rowcount
             self.conn.commit()
 
-            # 2. 执行 VACUUM (回收物理空间)
-            # 注意：这里改用 sys.stderr.write 防止破坏 MCP 协议
+           
+          
             if deleted_count > 0:
                 sys.stderr.write(f"[*] Pruning: Deleted {deleted_count} old artifacts. Optimizing DB...\n")
                 try:
                     self.cursor.execute("VACUUM")
                 except sqlite3.OperationalError:
-                    # 如果数据库被锁定，跳过 VACUUM，不影响主流程
+                   
                     sys.stderr.write("[!] VACUUM skipped due to locked DB.\n")
             else:
-                # 调试信息发往 stderr
-                # sys.stderr.write("[*] Pruning: Database is clean.\n")
+                
                 pass
 
             return deleted_count
         except Exception as e:
-            # 错误信息发往 stderr
+       
             sys.stderr.write(f"[!] Prune Error: {e}\n")
             return 0
 
-    # ==========================================
-    # [修复点] 以下两个方法必须与上面方法平级缩进
-    # ==========================================
+  
 
     def register_birth(self, child_id, parent_id, parent_desc, ts):
         try:
@@ -532,8 +529,7 @@ class ProvenancePublicDirect:
         self.host_ip = host_ip
         self.nodes = {}
         self.edge_map = {}
-        # [NEW] 邻接索引：{ src_id: {dst_id1, dst_id2, ...} }
-        # 使用 set 避免同一对节点间因多条不同类型的边导致重复记录
+     
         self.adj_list = {}
         self.pending_conns = {}
         self.inbound_cache = []
@@ -551,7 +547,6 @@ class ProvenancePublicDirect:
         self.C_ALERT = "#e74c3c";
         self.C_MEM = "#8e44ad";
         self.C_IN_AGG = "#00d2d3"
-        # [新增] 权限提升(金) 和 删除(深红) 的颜色定义
         self.C_PRIV = "#f39c12"
         self.C_DEL = "#c0392b"
 
@@ -574,8 +569,7 @@ class ProvenancePublicDirect:
             self.edge_map[key]['count'] += 1
         self.connected_targets.add(dst)
         self.connected_targets.add(src)
-        # 自循环边只存入 edge_map 用于渲染，不写入 adj_list
-        # 否则 _stitch 会把节点自身当作邻居导致错误的 TimeJump
+    
         if src != dst:
             if src not in self.adj_list:
                 self.adj_list[src] = set()
@@ -619,38 +613,34 @@ class ProvenancePublicDirect:
             dport = int(ev.get('dst_port', 0) or 0)
             raw_payload = ev.get('payload_info', '').strip()
 
-            # --- [A] 入站流量 (Inbound) ---
+        
             if dip == self.host_ip:
                 src_ip = ev.get('src_ip')
                 if not src_ip: return
 
-                # 1. 确定协议
+              
                 proto_name = ev.get('subtype')
                 if not proto_name or proto_name == 'NETWORK':
                     proto_name = self._get_proto(ev.get('proto_id', 6), dport)
 
-                # 2. [关键修改] 生成聚合节点 ID
-                # 现在的 ID 由 [源IP] + [目标端口] 组成
-                # 这样同一个 IP 访问同一个端口会聚合在一起，不同 IP 分开
                 rid = f"src_{src_ip}_{dport}"
 
-                # 3. 构造 Payload 日志
-                # 既然节点已经是确定的 src_ip 了，日志里只记录时间即可
+            
                 payload_entry = ""
                 if raw_payload:
                     short_ts = str(ts).split('T')[-1].split('.')[0] if 'T' in str(ts) else ts
                     payload_entry = f"[{short_ts}] {raw_payload}"
 
-                # 4. 创建节点
+              
                 self.add_node(
                     rid,
-                    f"{src_ip}\n(To :{dport})",  # Label 显示 源IP
+                    f"{src_ip}\n(To :{dport})",  
                     'net_in_agg',
                     self.C_IN_AGG,
-                    'star',  # 保持星形，表示外部源
+                    'star',  
                     'solid',
                     {
-                        'ip': src_ip,  # [关键] 这里现在是确切的 Source IP
+                        'ip': src_ip,  
                         'port': str(dport),
                         'protocol': proto_name,
                         'payload': payload_entry,
@@ -658,16 +648,15 @@ class ProvenancePublicDirect:
                     }
                 )
 
-                # 5. 连接到主机
-                # 边上的标签显示协议
+             
                 self.add_edge(rid, self.host_node_id, f"{proto_name}", self.C_IN_AGG)
 
-            # --- [B] 出站流量 (Outbound) ---
+           
             elif dip:
                 rid = self._id_net(dip, dport)
                 proto = self._get_proto(ev.get('proto_id', 6), dport)
 
-                # [重点修改] 处理出站 Payload
+                
                 payload_entry = ""
                 if raw_payload:
                     payload_entry = f">>> {raw_payload}"
@@ -683,11 +672,11 @@ class ProvenancePublicDirect:
                         'ip': dip,
                         'port': str(dport),
                         'time': ts,
-                        'payload': payload_entry  # <--- 这里之前漏掉了，现在加上
+                        'payload': payload_entry 
                     }
                 )
 
-                # 处理连接关联 (Connection Matching)
+            
                 if dport in self.pending_conns:
                     for c in reversed(self.pending_conns[dport]):
                         c['matched'] = True
@@ -717,18 +706,15 @@ class ProvenancePublicDirect:
                 self.add_node(fid, os.path.basename(fname), 'file', self.C_FILE, 'box', 'solid', {'path': fname,'time': ts})
                 self.add_edge(proc_id, fid, "open")
 
-            # [新增] 处理内存映射 (MMAP)
+          
             if ev.get('subtype') == 'MMAP':
                 prot = ev.get('prot', '')
-                # 1. 检测高危可执行内存 (Shellcode/Injection 痕迹)
                 if ev.get('is_exec'):
                     self.nodes[proc_id]['extra']['risk_mmap'] = prot
-                # W+X 可写可执行内存：绘制红色自循环边，直接可见
                 if 'WRITE' in prot and 'EXEC' in prot:
                     self.add_edge(proc_id, proc_id, "RWX\nShellcode", "#e74c3c", "solid")
 
-                # 2. 如果 eBPF 捕获到了映射的文件名 (File-backed mapping)
-                # 这种通常是加载 .so 库或读取大文件
+            
                 if ev.get('filename'):
                     fname = ev.get('filename')
                     fid = self._id_file(fname, cg)
@@ -736,68 +722,46 @@ class ProvenancePublicDirect:
 
                     self.add_node(fid, os.path.basename(fname), 'file', self.C_FILE, 'box', 'solid',
                                   {'path': fname,'time': ts})
-                    # 使用虚线表示 mmap，区别于普通的 open
                     self.add_edge(proc_id, fid, f"mmap({prot_label})", color="#1abc9c", style="dashed")
 
-            # =========================================================
-            # [新增] 处理无文件执行 (MEMFD)
-            # =========================================================
+
             if ev.get('subtype') == 'MEMFD':
                 mem_name = ev.get('name', 'anonymous')
-                # 橙色虚线自循环，表示进程在内存中匿名执行代码
                 self.add_edge(proc_id, proc_id, f"MEMFD\n{mem_name}", "#e67e22", "dashed")
                 if proc_id in self.nodes:
                     self.nodes[proc_id]['extra']['memfd_name'] = mem_name
 
-
-            # =========================================================
-            # [新增] 处理 PTRACE 注入/调试事件 (适配新的 Agent)
-            # =========================================================
             if ev.get('subtype') == 'INJECT':
                 req_name = ev.get('request_name', 'PTRACE')
                 target_pid = ev.get('target_pid')
 
-                # 记录高危标记到当前节点，供 AttckMapper 使用
                 self.nodes[proc_id]['extra']['ptrace_req'] = req_name
 
-                # 如果有目标进程 ID，且不是自己调试自己 (TRACEME 且 target=0 或 target=ppid)
-                # 注意：Agent 发来的 TRACEME target_pid 可能是 PPID，也可能是 0，视实现而定
+          
                 if target_pid and target_pid != 0:
-                    # 我们假设目标进程在同一个 Cgroup 中 (通常如此)
                     target_id = self._id_proc(target_pid, cg)
 
-                    # 确保目标节点存在 (即使它还没产生日志)
                     if target_id not in self.nodes:
                         self.add_node(target_id, f"Target\n{target_pid}", 'proc', self.C_PROC, 'dot', 'solid',
                                       {'pid': str(target_pid)})
 
-                    # 绘制注入连线：紫色虚线
-                    # 连线方向：发起者(Tracer) -> 受害者(Target)
+             
                     edge_label = f"{req_name.replace('PTRACE_', '')}"
                     self.add_edge(proc_id, target_id, edge_label, color="#9b59b6", style="dashed")
 
-            # =========================================================
-            # [新增] 处理权限提升 (SETUID)
-            # =========================================================
             if ev.get('subtype') == 'SETUID':
                 target_uid = ev.get('target_uid')
-                # 1. 添加自循环边表示状态变更，使用金色实线
                 self.add_edge(proc_id, proc_id, f"SETUID({target_uid})", self.C_PRIV, "solid")
-                # 2. 标记节点风险，供 AttckMapper 分析
                 if proc_id in self.nodes:
                     self.nodes[proc_id]['extra']['risk_priv'] = True
 
-            # =========================================================
-            # [新增] 处理文件删除 (DELETE/UNLINK)
-            # =========================================================
+
             if ev.get('subtype') == 'DELETE':
                 fname = ev.get('filename')
                 if fname:
                     fid = self._id_file(fname, cg)
-                    # 确保文件节点存在 (可能文件是在监控开始前创建的)
                     self.add_node(fid, os.path.basename(fname), 'file', self.C_FILE, 'box', 'solid',
                                   {'path': fname, 'time': ts})
-                    # 添加删除连线，使用深红色虚线
                     self.add_edge(proc_id, fid, "unlink", self.C_DEL, "dashed")
 
             if ev.get('subtype') == 'CONNECT':
@@ -819,13 +783,11 @@ class ProvenancePublicDirect:
 
     def get_data(self):
         fn = []
-        # 1. 收集节点
         if self.host_node_id in self.nodes:
             fn.append(self.nodes[self.host_node_id])
 
         for nid, n in self.nodes.items():
             if nid == self.host_node_id: continue
-            # 过滤逻辑：只保留有连接的网络/网关节点
             if n['group'] in ['net', 'net_in_agg', 'gw']:
                 if nid in self.connected_targets: fn.append(n)
             else:
@@ -834,9 +796,7 @@ class ProvenancePublicDirect:
         fids = set(n['id'] for n in fn)
         eo = []
 
-        # 2. 收集边
         for (s, d, l), i in self.edge_map.items():
-            # 确保边的起点和终点都在当前的节点列表中
             if s in fids and d in fids:
                 edge_obj = {
                     'from': s,
@@ -850,10 +810,6 @@ class ProvenancePublicDirect:
                 if i.get('style') == 'dashed':
                     edge_obj['dashes'] = True
 
-                # ==========================================
-                # 【照抄 TR-PCI 逻辑】：
-                # 丢弃 selfReference 这种花里胡哨的属性，直接用 curvedCW 即可！
-                # ==========================================
                 if s == d:
                     edge_obj['smooth'] = {'type': 'curvedCW', 'roundness': 0.4}
 
@@ -868,7 +824,7 @@ class AttckMapper:
     def __init__(self):
         self.rules = [
             # =========================================================================
-            # TACTIC: RECONNAISSANCE (TA0043) - 侦察
+            # TACTIC: RECONNAISSANCE (TA0043) 
             # =========================================================================
             {'id': 'T1595.002', 'phase': 'Reconnaissance',
              'pattern': re.compile(r'-h|-t|scan|--script'),
@@ -901,7 +857,7 @@ class AttckMapper:
              'desc': 'Querying Technical Databases (查询技术数据库)'},
 
             # =========================================================================
-            # TACTIC: RESOURCE DEVELOPMENT (TA0042) - 资源开发
+            # TACTIC: RESOURCE DEVELOPMENT (TA0042) 
             # =========================================================================
             {'id': 'T1587.001', 'phase': 'Resource Development',
              'pattern': re.compile(r'-o|build|dist|pyinstaller|cx_Freeze'),
@@ -929,7 +885,7 @@ class AttckMapper:
              'desc': 'Provisioning Rogue Cloud Instances (非法购买/启动云主机)'},
 
             # =========================================================================
-            # TACTIC: INITIAL ACCESS (TA0001) - 初始访问
+            # TACTIC: INITIAL ACCESS (TA0001) 
             # =========================================================================
             {'id': 'T1190', 'phase': 'Initial Access',
              'pattern': re.compile(r'java|php|node|httpd|tomcat|jboss|nginx|apache|struts|weblogic'),
@@ -957,7 +913,7 @@ class AttckMapper:
              'desc': 'Trusted Relationship Setup (添加SSH公钥)'},
 
             # =========================================================================
-            # TACTIC: EXECUTION (TA0002) - 执行
+            # TACTIC: EXECUTION (TA0002) 
             # =========================================================================
             {'id': 'T1059.004', 'phase': 'Execution',
              'pattern': re.compile(r'-c|--eval|\.sh|\.bash|\|.*bash|\|.*sh'),
@@ -995,7 +951,7 @@ class AttckMapper:
              'desc': 'Abuse of Software Deployment Tools (运维工具滥用)'},
 
             # =========================================================================
-            # TACTIC: PERSISTENCE (TA0003) - 持久化
+            # TACTIC: PERSISTENCE (TA0003) 
             # =========================================================================
             {'id': 'T1053.003', 'phase': 'Persistence',
              'pattern': re.compile(r'/etc/cron|/var/spool/cron|crontab'),
@@ -1039,7 +995,7 @@ class AttckMapper:
              'desc': 'Global Library Hijacking via ld.so.preload (全局库劫持)'},
 
             # =========================================================================
-            # TACTIC: PRIVILEGE ESCALATION (TA0004) - 提权
+            # TACTIC: PRIVILEGE ESCALATION (TA0004) 
             # =========================================================================
             {'id': 'T1548.001', 'phase': 'Privilege Escalation',
              'pattern': re.compile(r'u\+s|g\+s|4[0-9]{3}|2[0-9]{3}'),
@@ -1077,7 +1033,7 @@ class AttckMapper:
              'desc': 'Container Escape Attempt (容器逃逸)'},
 
             # =========================================================================
-            # TACTIC: DEFENSE EVASION (TA0005) - 防御规避
+            # TACTIC: DEFENSE EVASION (TA0005) 
             # =========================================================================
             {'id': 'T1070.002', 'phase': 'Defense Evasion',
              'pattern': re.compile(r'/var/log|/var/adm|/var/audit'),
@@ -1141,7 +1097,7 @@ class AttckMapper:
              'desc': 'Container attempting to access host files (容器访问宿主机文件)'},
 
             # =========================================================================
-            # TACTIC: CREDENTIAL ACCESS (TA0006) - 凭证获取
+            # TACTIC: CREDENTIAL ACCESS (TA0006) 
             # =========================================================================
             {'id': 'T1003.008', 'phase': 'Credential Access',
              'pattern': re.compile(r'/etc/shadow|/etc/passwd|/etc/master\.passwd|/etc/security/opasswd'),
@@ -1184,7 +1140,7 @@ class AttckMapper:
              'desc': 'Brute Force or Password Cracking (暴力破解/密码爆破)'},
 
             # =========================================================================
-            # TACTIC: DISCOVERY (TA0007) - 发现
+            # TACTIC: DISCOVERY (TA0007) 
             # =========================================================================
             {'id': 'T1082', 'phase': 'Discovery',
              'pattern': re.compile(r'.*'),
@@ -1242,7 +1198,7 @@ class AttckMapper:
              'desc': 'Network Sniffing (网络嗅探)'},
 
             # =========================================================================
-            # TACTIC: LATERAL MOVEMENT (TA0008) - 横向移动
+            # TACTIC: LATERAL MOVEMENT (TA0008) 
             # =========================================================================
             {'id': 'T1021.004', 'phase': 'Lateral Movement',
              'pattern': re.compile(r'-i|ProxyCommand|StrictHostKeyChecking=no|-R|-L|-D'),
@@ -1280,7 +1236,7 @@ class AttckMapper:
              'desc': 'Kerberos Ticket Manipulation (Kerberos票据操作)'},
 
             # =========================================================================
-            # TACTIC: COLLECTION (TA0009) - 收集
+            # TACTIC: COLLECTION (TA0009) 
             # =========================================================================
             {'id': 'T1560', 'phase': 'Collection',
              'pattern': re.compile(r'-c.*zf|cf|czf|\.tar|\.zip|\.gz|\.7z|\.rar'),
@@ -1318,7 +1274,7 @@ class AttckMapper:
              'desc': 'Local Email Collection (邮件窃取)'},
 
             # =========================================================================
-            # TACTIC: COMMAND AND CONTROL (TA0011) - 命令与控制
+            # TACTIC: COMMAND AND CONTROL (TA0011) 
             # =========================================================================
             {'id': 'T1071', 'phase': 'Command and Control',
              'pattern': re.compile(r'.*'),
@@ -1341,7 +1297,7 @@ class AttckMapper:
              'desc': 'Ingress Tool Transfer (下载恶意文件)'},
 
             # =========================================================================
-            # TACTIC: EXFILTRATION (TA0010) - 数据渗漏
+            # TACTIC: EXFILTRATION (TA0010) 
             # =========================================================================
             {'id': 'T1048', 'phase': 'Exfiltration',
              'pattern': re.compile(r'put|mput|upload|STOR'),
@@ -1364,7 +1320,7 @@ class AttckMapper:
              'desc': 'Exfiltration to Physical Medium (物理介质复制)'},
 
             # =========================================================================
-            # TACTIC: IMPACT (TA0040) - 影响
+            # TACTIC: IMPACT (TA0040) 
             # =========================================================================
             {'id': 'T1485', 'phase': 'Impact',
              'pattern': re.compile(r'-rf|--no-preserve-root|if=/dev/zero|if=/dev/urandom'),
@@ -1406,108 +1362,81 @@ class AttckMapper:
         import shlex
         matches = []
 
-        # 1. 获取原始命令行字符串
+
         extra = node.get('extra', {})
         cmd_full = str(extra.get('cmd', '')).strip()
 
-        # 这里的 desc 和 group 保留你原本的辅助逻辑
-        # [修改点 1] 提取 desc 并保留
         desc = str(extra.get('desc', '')).strip()
 
         if node.get('group') == 'memfd':
             matches.append({'tag': "T1620", 'reason': "Reflective Code Loading (memfd)"})
 
-        # [新增] MMAP 高危权限检测 (Shellcode/注入)
-        # 这个标记是在 ProvenancePublicDirect.process_event 中打上的
+
         if extra.get('risk_mmap'):
-            prot = extra['risk_mmap']            # 如果包含 WRITE 和 EXEC (W+X)，这是极高危的 Shellcode 特征
+            prot = extra['risk_mmap']          
             if 'WRITE' in prot and 'EXEC' in prot:
                 matches.append({'tag': "T1055", 'reason': f"Process Injection / Shellcode (W+X): {prot}"})
             else:
                 matches.append({'tag': "T1620", 'reason': f"Executable Memory Mapping: {prot}"})
 
-        # =========================================================
-        # [新增] Ptrace 威胁映射
-        # =========================================================
+   
         if extra.get('ptrace_req'):
             req = extra['ptrace_req']
 
-            # 场景 A: 代码注入 (T1055 Process Injection)
-            # POKETEXT/POKEDATA 意味着正在修改另一个进程的内存
+   
             if 'POKETEXT' in req or 'POKEDATA' in req:
                 matches.append({'tag': "T1055", 'reason': f"Code Injection via {req}"})
 
-            # 场景 B: 进程依附 (T1055 / T1548)
-            # 强行 Attach 到另一个进程，通常用于转储凭证或劫持控制流
             elif 'ATTACH' in req:
                 matches.append({'tag': "T1055", 'reason': f"Process Attachment via {req}"})
 
-            # 场景 C: 反调试/自我保护 (T1622 Debugger Evasion)
-            # 恶意软件常用 TRACEME 来检测是否已经被分析人员调试
             elif 'TRACEME' in req:
                 matches.append({'tag': "T1622", 'reason': "Anti-Debugging Check (TRACEME)"})
 
-            # 场景 D: 其它读取 (T1003 Credential Dumping)
-            # 读取内存可能是在窃取密码
+     
             elif 'PEEK' in req:
                 matches.append({'tag': "T1003", 'reason': f"Memory Scraping via {req}"})
 
-        # =========================================================
-        # [新增] 权限提升威胁映射 (T1548)
-        # =========================================================
+
         if extra.get('risk_priv'):
             matches.append({'tag': "T1548", 'reason': "Privilege Escalation (setuid syscall detected)"})
 
-        # 2. 预处理：命令行分词 (Tokenization)
-        # 这是降低误报的关键步骤。将 "bash -c 'echo hi'" 分割为 ["bash", "-c", "echo hi"]
+
         try:
-            # 使用 shlex 处理引号和转义，模拟 Shell 行为
             argv = shlex.split(cmd_full)
         except ValueError:
-            # 如果 shlex 解析失败（例如引号不闭合），回退到简单的空格分割
             argv = cmd_full.split()
 
         if not argv:
             return matches
 
-        # 3. 分离 Binary 和 Arguments
-        binary_path = argv[0]  # e.g., "/usr/bin/curl" 或 "curl"
+        binary_path = argv[0]  # e.g., "/usr/bin/curl" or "curl"
         binary_name = os.path.basename(binary_path)  # e.g., "curl"
 
-        # 将参数重新组合成字符串，用于正则匹配 (不包含 binary 本身)
-        # 这样 pattern 正则就不会误匹配到工具名
         args_str = " ".join(argv[1:])
 
         # 4. 遍历规则进行匹配
         for r in self.rules:
             rule_id = r.get('id')
-            tool_regex = r.get('cmd')  # 对应规则中的 'cmd' (工具名)
-            args_regex = r.get('pattern')  # 对应规则中的 'pattern' (参数特征)
+            tool_regex = r.get('cmd')  
+            args_regex = r.get('pattern') 
 
             is_binary_match = False
 
-            # --- 阶段一：匹配工具 (Binary Matching) ---
             if tool_regex:
-                # 策略 A: 精确匹配文件名 (推荐)
-                # 检查 binary_name 是否包含正则 (例如 python3 匹配 python)
                 if tool_regex.search(binary_name):
                     is_binary_match = True
-                # 策略 B: 某些规则可能写了全路径，检查完整路径
                 elif tool_regex.search(binary_path):
                     is_binary_match = True
             else:
-                # 如果规则没定义 cmd (罕见)，则默认跳过 binary 检查，直接查参数
-                # 这种通常是通用行为检测，如 "Finding credentials in generic files"
+       
                 is_binary_match = True
 
-            # 如果工具名都不对，直接跳过该规则 (Performance Boost & FP Reduction)
             if not is_binary_match:
                 continue
 
-            # --- 阶段二：匹配参数 (Arguments Matching) ---
-                # [修改点 2] 在参数匹配阶段，同时也扫描 desc 字段
+      
             if args_regex:
-                # 逻辑变更为：搜参数 OR 搜完整命令 OR 搜描述信息
                 if args_regex.search(args_str) or args_regex.search(cmd_full) or (desc and args_regex.search(desc)):
                     if not any(m['tag'] == rule_id for m in matches):
                         matches.append({'tag': rule_id, 'reason': r.get('desc')})
@@ -1530,13 +1459,11 @@ class MultiSliceOrchestrator:
 
     def process(self, pattern):
         try:
-            # --- [新增] : 防止数据库无限膨胀，清理超过 7 天的旧记忆 ---
             self.mem.prune_old_memories(days_retention=7)
             # -----------------------------------------------------
             files = sorted(glob.glob(pattern))
             if not files: return "No files found"
 
-            # 重置当前分析状态
             self.snaps, self.g_nodes, self.g_edges = {}, {}, {}
             self.ghosts, self.ghost_edges = [], []
 
@@ -1547,33 +1474,25 @@ class MultiSliceOrchestrator:
                 slice_name = os.path.basename(fpath)
                 sys.stderr.write(f"[*] Ingesting {slice_name}\n")
 
-                # 1. 摄取日志
                 builder.ingest(fpath)
 
-                # 2. 识别本切片新增的节点
                 curr_keys = list(builder.nodes.keys())
                 new_nodes = [builder.nodes[nid] for nid in curr_keys if nid not in processed_ids]
 
-                # 3. 执行“第二个版本”的高级缝合逻辑
                 if new_nodes:
                     self._stitch(new_nodes, builder, slice_name)
 
-                    # B. [新增] 族谱重构 (彻底解决托孤)
-                    # 对所有新出现的进程节点进行“寻亲”
                     self._reconstruct_lineage(new_nodes, builder)
 
-                # C. [新增] 登记出生信息 (为未来做准备)
-                # 遍历当前图中的所有连线，如果发现是 spawn 关系，就存入 lineage 表
+          
                 self._register_lineage(builder)
 
                 for nid in curr_keys: processed_ids.add(nid)
                 self.mem.commit_batch()
 
-            # 4. 构建全局图结构
             builder.process_unmatched()
             nodes, edges = builder.get_data()
 
-            # 处理威胁检测与 Ghost 集成
             for n in nodes:
                 threats = self.mapper.check_node(n)
                 if threats:
@@ -1581,9 +1500,7 @@ class MultiSliceOrchestrator:
                     n['color'] = "#e74c3c"
                 self.g_nodes[n['id']] = copy.deepcopy(n)
 
-            # 将缝合产生的幽灵节点加入全局
             for g in self.ghosts: self.g_nodes[g['id']] = g
-            # 【关键防御】：加上 label 作为键值一部分，防止同一节点的自循环边(比如既有 RWX 又有 MEMFD)被字典互相覆盖
             for e in edges:
                 edge_key = f"{e['from']}>{e['to']}>{e.get('label', '')}"
                 self.g_edges[edge_key] = e
@@ -1597,9 +1514,6 @@ class MultiSliceOrchestrator:
         except Exception as e:
             return f"Error: {str(e)}"
 
-        # ==========================================
-        # [新增] 把这两个新方法加到类里
-        # ==========================================
 
     def _register_lineage(self, builder):
         ts = datetime.now().timestamp()
@@ -1615,7 +1529,6 @@ class MultiSliceOrchestrator:
         for n in new_nodes:
             if n['group'] != 'proc': continue
 
-            # 检查图里是否已有父亲
             has_parent = False
             for pid, neighbors in builder.adj_list.items():
                 if n['id'] in neighbors:
@@ -1625,17 +1538,14 @@ class MultiSliceOrchestrator:
                         break
             if has_parent: continue
 
-            # 查库寻亲
             birth_record = self.mem.find_parent(n['id'])
             if birth_record:
                 pid, pdesc = birth_record
                 if pid in builder.nodes:
-                    # 父亲在图里，连虚线
                     key = (pid, n['id'], 'Ancestry')
                     if key not in builder.edge_map:
                         builder.add_edge(pid, n['id'], label="Spawn(R)", color="#1abc9c", style="dashed")
                 else:
-                    # 父亲不在，创建 Ghost
                     gid = f"ghost_parent_{pid}"
                     if not any(g['id'] == gid for g in self.ghosts):
                         self.ghosts.append({
@@ -1648,31 +1558,22 @@ class MultiSliceOrchestrator:
 
     def _is_ignorable_ip(self, ip):
         if not ip: return True
-        # 1. 忽略本地回环和全零
         if ip.startswith("127.") or ip == "0.0.0.0" or ip == "::1": return True
 
-        # 2. 忽略常见公共 DNS (Google, Cloudflare, AliDNS等)
-        # 实际生产中这里应该是一个 Config List
         common_dns = {"8.8.8.8", "8.8.4.4", "1.1.1.1", "114.114.114.114", "223.5.5.5"}
         if ip in common_dns: return True
 
-        # 3. (可选) 忽略多播地址
         if ip.startswith("224.") or ip.startswith("239."): return True
 
         return False
 
     def _stitch(self, new_nodes, builder, slice_name):
-        """
-        [V7 最终优化版 - 青色回归]
-        全维度缝合 + 智能IP过滤 + 消除同类噪音 + 颜色恢复为青色(#1abc9c)
-        """
+      
         ts = datetime.now().timestamp()
 
         for n in new_nodes:
-            # --- 1. 关联键提取 ---
             keys = set()
 
-            # A. 自身属性
             if n['group'] == 'file':
                 keys.add(f"FILE:{n['extra'].get('path')}")
             elif n['group'] in ['net', 'net_in_agg', 'gw']:
@@ -1680,7 +1581,6 @@ class MultiSliceOrchestrator:
                 if not self._is_ignorable_ip(ip):
                     keys.add(f"IP:{ip}")
 
-            # B. 邻居关联
             neighbor_ids = builder.adj_list.get(n['id'], set())
             for dst_id in neighbor_ids:
                 target = builder.nodes.get(dst_id)
@@ -1694,7 +1594,6 @@ class MultiSliceOrchestrator:
 
             if not keys: continue
 
-            # --- 2. 记忆检索与缝合 ---
             query_keys = list(keys)
             history = self.mem.recall(query_keys)
 
@@ -1703,15 +1602,12 @@ class MultiSliceOrchestrator:
 
                 hist_event_id = h['id']
 
-                # [SITUATION A] 实体直连
                 if hist_event_id in builder.nodes:
                     hist_node = builder.nodes[hist_event_id]
 
-                    # [同类抑制] 防止文件连文件，IP连IP
                     if hist_node['group'] == n['group']:
                         continue
 
-                    # [物理连接去重] 如果已经有实线连接，不画虚线
                     is_already_connected = False
                     if hist_event_id in builder.adj_list.get(n['id'], set()): is_already_connected = True
                     if n['id'] in builder.adj_list.get(hist_event_id, set()): is_already_connected = True
@@ -1723,13 +1619,11 @@ class MultiSliceOrchestrator:
                             hist_event_id,
                             n['id'],
                             label="TimeJump",
-                            color="#1abc9c",  # <--- 改回青色
+                            color="#1abc9c",  
                             style="dashed"
                         )
 
-                # [SITUATION B] 幽灵节点
                 else:
-                    # [同类抑制]
                     is_self_ref = False
                     if n['group'] == 'file' and h['key'].startswith("FILE:"): is_self_ref = True
                     if n['group'] in ['net', 'gw'] and h['key'].startswith("IP:"): is_self_ref = True
@@ -1741,18 +1635,17 @@ class MultiSliceOrchestrator:
                             'id': gid,
                             'label': f"👻 History\n{h['desc']}",
                             'group': 'ghost',
-                            'color': '#1abc9c',  # <--- 改回青色
+                            'color': '#1abc9c',  
                             'shape': 'dot',
                             'extra': {'desc': f"Linked via {h['key']}", 'payload': h['payload']}
                         })
                         self.ghost_edges.append({
                             'from': gid, 'to': n['id'],
                             'label': 'TimeJump',
-                            'color': '#1abc9c',  # <--- 改回青色
+                            'color': '#1abc9c',  
                             'dashes': True
                         })
 
-            # --- 3. 记忆存储 ---
             should_remember = False
             if n['group'] in ['file', 'net', 'net_in_agg', 'gw']:
                 should_remember = True
@@ -1767,12 +1660,10 @@ class MultiSliceOrchestrator:
                                   json.dumps(n.get('extra', {})))
 
     def _cluster(self):
-        # 初始化全局 IP 映射表 (IP -> Community Key)
         self.ip_to_comm = {}
 
         if not LEIDEN_AVAILABLE or not self.g_nodes:
             self.snaps['overview'] = {'nodes': list(self.g_nodes.values()), 'edges': list(self.g_edges.values())}
-            # Fallback: 如果没有聚类，所有 IP 都映射到 overview
             for n in self.g_nodes.values():
                 if 'ip' in n.get('extra', {}):
                     self.ip_to_comm[n['extra']['ip']] = 'overview'
@@ -1794,7 +1685,6 @@ class MultiSliceOrchestrator:
 
         ov_nodes = []
         for i, mems in enumerate(part):
-            # [Smart Filtering] Ignore noise (clusters with 1 node), UNLESS it is a Threat
             is_threat_cluster = False
             for idx in mems:
                 nid = idx2id[idx]
@@ -1817,7 +1707,6 @@ class MultiSliceOrchestrator:
                 if n.get('extra', {}).get('attck_evidence'): tc += 1
                 c_nodes.append(n)
 
-                # [NEW] Populate IP Map
                 if 'ip' in n.get('extra', {}):
                     self.ip_to_comm[n['extra']['ip']] = comm_key
 
@@ -1837,7 +1726,6 @@ class MultiSliceOrchestrator:
     def write(self):
         import urllib.request
 
-        # 首次运行时下载，之后缓存到本地
         vis_path = "vis-network.min.js"
         marked_path = "marked.min.js"
 
@@ -1896,7 +1784,6 @@ def list_communities(only_outbound: bool = False) -> str:
     for k, d in service.snaps.items():
         if not k.startswith('comm_'): continue
 
-        # [修改点] 双重保险：再次检查节点数量
         if len(d['nodes']) <= 1: continue
 
         if only_outbound:
