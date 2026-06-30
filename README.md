@@ -7,3 +7,8 @@
 4. Add MCP service to GeminiCLI:
    gemini mcp add kexdr python /your path/kexdr_mcp.py
 
+################ Update Information for Rebuttal #########################
+
+1. Croped Desensitizd subset of attack scenarios A1-15.
+2. A series of ground truth screenshots during our cyber threat hunting, captured by a host-only EDR agent.
+3. Exampled detection result visualization of CONTEXTS.
