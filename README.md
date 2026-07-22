@@ -63,8 +63,6 @@ corroborate the CVE/malware family.
 
 ## References
 
-References are grouped by CVE and formatted in the style of an [NVD](https://nvd.nist.gov) "CVE Detail" page: a **Hyperlink** column and a **Resource** column, where Resource uses NVD's standard reference-tag vocabulary (*Vendor Advisory, Third Party Advisory, Exploit, Patch, Issue Tracking, VDB Entry, US Government Resource, Press/Media Coverage, Mailing List*).
-
 ### CVE-2017-5645 Detail — A1
 
 | Hyperlink | Resource |
