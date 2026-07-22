@@ -2,7 +2,7 @@
 
 **Sources reconciled in this document:**
 1. `attack_scenario.pdf` — raw SIEM/eBPF provenance-graph screenshots (audit-06/07/10/12/14/17/18/21/23.json)
-2. `host_network-40.pdf` — *"Kernel Native Host-Network Collaboration Attack Provenance Solution"* (NDSS 2027 submission), Table I(B), Table IIA, Table IV, Fig. 5, Fig. 6
+2. `keXDR` — *"Kernel Native Host-Network Collaboration Attack Provenance Solution"* (NDSS 2027 submission), Table I(B), Table IIA, Table IV, Fig. 5, Fig. 6
 3. Public vulnerability advisories and vendor threat-intel reports (current as of 2026-07-22)
 
 This README is the single cross-reference point: for each of the 15
