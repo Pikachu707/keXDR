@@ -41,9 +41,9 @@ corroborate the CVE/malware family.
 | **A9** | CVE-2024-4110 (DOCKER) | `audit-14.json` (2026-01-18) — same file as A8, captioned "Docker and CoinMiner Variant" | Docker exploitation chain preceding the coinminer drop; paper groups A6–A8 as "Mixed RCE & CoinMiner" (Table IIA) | 10%/90% | 1.00 | [4]–[6] |
 | **A10** | CVE-2026-24061 (TELNETD) | `audit-23.json` (2026-02-04) | Large starburst fan-out from single telnetd-exploited host; crontab-based persistence | 40%/60% | 0.99 | [19]–[22] |
 | **A11** | CVE-2026-24061 (TELNETD) | `audit-12.json` (2026-02-05) | Second starburst graph, red Shellcode(RWX) edge, consistent with xmrig hand-off | 80%/20% | 0.99 | [19], [21], [23] |
-| **A12** | CVE-2023-46604 (ACTIVEMQ) | `audit-21.json` (2026-02-13) | Root of the ActiveMQ graph; `C1 CompilerThre[ad]` and `softirq` nodes visible in same file | 95%/5% | 1.00 | [24], [25] |
+| **A12** | CVE-2023-46604 (ACTIVEMQ) | `audit-21.json` (2026-02-13) | Root of the ActiveMQ graph; `C1 CompilerThread` and `softirq` nodes visible in same file | 95%/5% | 1.00 | [24], [25] |
 | **A13** | CVE-2023-46604 (ACTIVEMQ) | `audit-21.json` — same file as A12/A14/A15 | `rondo`/`rando`-named process branch, `ptrace` target PIDs 459/461 (T1055.008) | 95%/5% | 1.00 | [26], [27] |
-| **A14** | CVE-2023-46604 (ACTIVEMQ) | `audit-21.json` | Node explicitly labeled "C1 CompilerThre[ad]", red Shellcode(RWX) edge — the fileless case named in Section IV-B1 | 98%/2% | 0.98 | [28] |
+| **A14** | CVE-2023-46604 (ACTIVEMQ) | `audit-21.json` | Node explicitly labeled "C1 CompilerThread", red Shellcode(RWX) edge — the fileless case named in Section IV-B1 | 98%/2% | 0.98 | [28] |
 | **A15** | CVE-2023-46604 (ACTIVEMQ) | `audit-21.json` | Node explicitly labeled "softirq", RWX shellcode edge — also named in Section IV-B1 | 97%/3% | 0.99 | [28], [29] |
 
 ---
