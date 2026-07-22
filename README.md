@@ -43,8 +43,8 @@ corroborate the CVE/malware family.
 | **A11** | CVE-2026-24061 (TELNETD) | `audit-12.json` (2026-02-05) | Second starburst graph, red Shellcode(RWX) edge, consistent with xmrig hand-off | 80%/20% | 0.99 | [19], [21], [23] |
 | **A12** | CVE-2023-46604 (ACTIVEMQ) | `audit-21.json` (2026-02-13) | Root of the ActiveMQ graph; `C1 CompilerThread` and `softirq` nodes visible in same file | 95%/5% | 1.00 | [24], [25] |
 | **A13** | CVE-2023-46604 (ACTIVEMQ) | `audit-21.json` — same file as A12/A14/A15 | `rondo`/`rando`-named process branch, `ptrace` target PIDs 459/461 (T1055.008) | 95%/5% | 1.00 | [26], [27] |
-| **A14** | CVE-2023-46604 (ACTIVEMQ) | `audit-21.json` | Node explicitly labeled "C1 CompilerThread", red Shellcode(RWX) edge — the fileless case named in Section IV-B1 | 98%/2% | 0.98 | [28] |
-| **A15** | CVE-2023-46604 (ACTIVEMQ) | `audit-21.json` | Node explicitly labeled "softirq", RWX shellcode edge — also named in Section IV-B1 | 97%/3% | 0.99 | [28], [29] |
+| **A14** | CVE-2023-46604 (ACTIVEMQ) | `audit-21.json` | Node explicitly labeled `C1 CompilerThread`, red Shellcode(RWX) edge — the fileless case named in Section IV-B1 | 98%/2% | 0.98 | [28] |
+| **A15** | CVE-2023-46604 (ACTIVEMQ) | `audit-21.json` | Node explicitly labeled `softirq`, RWX shellcode edge — also named in Section IV-B1 | 97%/3% | 0.99 | [28], [29] |
 
 ---
 
