@@ -1,0 +1,74 @@
+keXDR Research Use License
+Version 1.0
+
+Copyright (c) 2026 The TR-PCI Authors
+
+This software, including all associated source code, scripts, models,
+documentation, and generated artifacts (the "Software"), is made available
+solely for non-commercial academic and research purposes, subject to the
+terms below.
+
+1. GRANT OF RIGHTS
+
+   Permission is hereby granted, free of charge, to any person or academic
+   institution obtaining a copy of the Software, to use, copy, modify, merge,
+   and distribute copies of the Software, subject to the following
+   conditions:
+
+   a. The Software may be used only for teaching, academic research, and
+      other non-commercial scholarly purposes ("Research Purposes").
+
+   b. Any use of the Software to develop, support, or operate a product,
+      service, or system that is sold, licensed, or otherwise monetized,
+      directly or indirectly, is strictly prohibited without prior
+      written permission from the copyright holders.
+
+   c. Redistribution of the Software, in source or modified form, must
+      retain this license in full and must not remove or alter any
+      copyright, attribution, or license notices.
+
+2. NO COMMERCIAL USE
+
+   "Commercial use" means use of the Software, in whole or in part, in any
+   manner primarily intended for or directed toward commercial advantage or
+   monetary compensation. This includes, without limitation:
+
+   - Incorporating the Software into a commercial product or service;
+   - Using the Software to provide paid consulting, managed detection, or
+     security services to third parties;
+   - Any use by a for-profit entity outside of internal, non-commercial
+     research and evaluation.
+
+   Entities wishing to use the Software for commercial purposes must obtain
+   a separate commercial license from the copyright holders.
+
+3. ATTRIBUTION
+
+   Any publication, technical report, or derivative work that makes use of
+   the Software must cite the associated research artifact. A citation
+   entry will be provided in this repository upon publication.
+
+4. DISCLAIMER OF WARRANTY
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+   THE SOFTWARE IS A RESEARCH PROTOTYPE AND HAS NOT BEEN HARDENED FOR
+   PRODUCTION OR SAFETY-CRITICAL USE.
+
+5. LIMITATION OF LIABILITY
+
+   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+   CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+   TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE
+   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+6. TERMINATION
+
+   This license and the rights granted hereunder will terminate
+   automatically upon any breach of the terms above. Upon termination, all
+   copies of the Software in your possession must be destroyed or ceased
+   from use.
+
+For commercial licensing inquiries, please contact the repository
+maintainers.
