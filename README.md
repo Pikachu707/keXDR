@@ -127,7 +127,7 @@ keXDR shares its evaluation telemetry with the [TR-PCI](https://github.com/Pikac
 |---|---|
 | **Size** | ~70 GB (decompressed) |
 | **Contents** | Raw audit logs, rotated JSON shards, reconstructed graph snapshots |
-| **Access** | [Zenodo record link — *add DOI/link here*] |
+| **Access** | will be released after peer-review |
 
 
 <img width="861" height="520" alt="截屏2026-07-30 21 38 08" src="https://github.com/user-attachments/assets/591dccc5-0ada-41d6-a3e4-4320b68ecff3" />
