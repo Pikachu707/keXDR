@@ -121,7 +121,7 @@ See [`CAMPAIGN_DOSSIER.md`](./CAMPAIGN_DOSSIER.md) for the full per-campaign bre
 
 ## Dataset
 
-keXDR shares its evaluation telemetry with the [TR-PCI](https://github.com/Pikachu707/TR-PCI) project — both are released from the same **Zenodo** dataset (~70 GB uncompressed), covering raw eBPF audit logs and reconstructed provenance graphs for all campaigns referenced above.
+keXDR‘s telemetry dataset for evaluation is released from the **Zenodo** (~70 GB uncompressed), covering raw eBPF host-network(L4-L7) audit logs and reconstructed provenance graphs for all campaigns referenced above.
 
 | | |
 |---|---|
