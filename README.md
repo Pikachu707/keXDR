@@ -149,4 +149,4 @@ In short:
 
 ## Disclaimer
 
-This project is a research prototype released in support of academic work on provenance-based intrusion detection. It is intended for use in controlled, authorized environments (e.g., testbeds, sandboxed VMs) and has not been hardened for production deployment.
+This project is a research prototype released in support of academic work on provenance-based intrusion detection. 
