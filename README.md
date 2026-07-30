@@ -68,6 +68,7 @@ The system is exposed as an **MCP server** (`KeXDR-Server`), so any MCP-compatib
 | `dashboard.html` | Self-contained interactive report template rendered by the MCP server |
 | `prompt` | Reference operator prompt for driving the "Egress-Centric Provenance Analysis" workflow via an MCP-compatible LLM client |
 | `CAMPAIGN_DOSSIER.md` | Ground-truth cross-reference for 15 validated real-world attack campaigns (A1–A15), mapping each to its raw audit log, paper results, and public CVE/threat-intel references |
+| `attack scenario.pdf` | attack evidence screenshots |
 | `logo.svg` | Project logo |
 | `LICENSE` | Research-only, non-commercial license terms |
 
