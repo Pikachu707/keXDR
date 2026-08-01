@@ -38,7 +38,7 @@ HTML_TEMPLATE = """
 <html>
 <head>
     <title>KeXDR Multi-Verse</title>
-     <!-- 改为构建时内嵌 -->
+     <!-- Inlined at build time -->
     <script>__VIS_JS_CONTENT__</script>
     <script>__MARKED_JS_CONTENT__</script>
     <style>
@@ -803,7 +803,7 @@ class ProvenancePublicDirect:
                     'to': d,
                     'label': l,
                     'color': i['color'],
-                    'font': {'size': 10, 'align': 'middle'}, # 加上字体对齐，让标签好看点
+                    'font': {'size': 10, 'align': 'middle'}, # Add font alignment so the label reads better
                     'extra': i.get('extra')
                 }
 
@@ -829,32 +829,32 @@ class AttckMapper:
             {'id': 'T1595.002', 'phase': 'Reconnaissance',
              'pattern': re.compile(r'-h|-t|scan|--script'),
              'cmd': re.compile(r'nikto|nessus|openvas|sqlmap|nuclei|acunetix'),
-             'desc': 'Vulnerability Scanning Activity (漏洞扫描工具)'},
+             'desc': 'Vulnerability Scanning Activity (vulnerability scanning tools)'},
 
             {'id': 'T1595.001', 'phase': 'Reconnaissance',
              'pattern': re.compile(r'-p|-sS|-sT|--rate|-oG'),
              'cmd': re.compile(r'nmap|masscan|zmap|naabu|rustscan'),
-             'desc': 'Active Port Scanning (主动端口扫描)'},
+             'desc': 'Active Port Scanning'},
 
             {'id': 'T1593.002', 'phase': 'Reconnaissance',
              'pattern': re.compile(r'-w|-m|spider|crawl|--depth'),
              'cmd': re.compile(r'cewl|gospider|hakrawler|wget --mirror|photon'),
-             'desc': 'Web Spidering/Wordlist Generation (爬虫/字典生成)'},
+             'desc': 'Web Spidering/Wordlist Generation'},
 
             {'id': 'T1594', 'phase': 'Reconnaissance',
              'pattern': re.compile(r'-u|-w|-x|dir|fuzz'),
              'cmd': re.compile(r'gobuster|dirb|dirsearch|ffuf|feroxbuster'),
-             'desc': 'Web Directory/File Brute Forcing (Web目录爆破)'},
+             'desc': 'Web Directory/File Brute Forcing'},
 
             {'id': 'T1590.002', 'phase': 'Reconnaissance',
              'pattern': re.compile(r'axfr|enum|brute|subdomain'),
              'cmd': re.compile(r'dnsenum|dnsrecon|sublist3r|amass|fierce|dig axfr'),
-             'desc': 'DNS Enumeration/Zone Transfer (DNS枚举/区域传输)'},
+             'desc': 'DNS Enumeration/Zone Transfer'},
 
             {'id': 'T1596', 'phase': 'Reconnaissance',
              'pattern': re.compile(r'search|query|host|ip'),
              'cmd': re.compile(r'shodan|censys|searchsploit'),
-             'desc': 'Querying Technical Databases (查询技术数据库)'},
+             'desc': 'Querying Technical Databases'},
 
             # =========================================================================
             # TACTIC: RESOURCE DEVELOPMENT (TA0042) 
@@ -862,27 +862,27 @@ class AttckMapper:
             {'id': 'T1587.001', 'phase': 'Resource Development',
              'pattern': re.compile(r'-o|build|dist|pyinstaller|cx_Freeze'),
              'cmd': re.compile(r'gcc|make|go build|cargo build|pyinstaller|msfvenom'),
-             'desc': 'Malware Compilation/Building on Host (恶意软件编译)'},
+             'desc': 'Malware Compilation/Building on Host'},
 
             {'id': 'T1587.003', 'phase': 'Resource Development',
              'pattern': re.compile(r'req -new|-newkey|-days|-selfsigned|-keyout'),
              'cmd': re.compile(r'openssl|keytool|makecert|certutil'),
-             'desc': 'Generating Self-Signed Certificates (生成自签名证书)'},
+             'desc': 'Generating Self-Signed Certificates'},
 
             {'id': 'T1588.002', 'phase': 'Resource Development',
              'pattern': re.compile(r'exploitdb|github\.com.*(sqlmap|metasploit|covenant|sliver|havoc)|packetstorm'),
              'cmd': re.compile(r'git clone|wget|curl'),
-             'desc': 'Downloading Hacking Tools/Exploits (下载黑客工具)'},
+             'desc': 'Downloading Hacking Tools/Exploits'},
 
             {'id': 'T1608.001', 'phase': 'Resource Development',
              'pattern': re.compile(r's3 cp|blob upload|push|ftp://'),
              'cmd': re.compile(r'aws|az|gsutil|git|scp|ftp|curl -T'),
-             'desc': 'Staging/Uploading Malware to External Infrastructure (上传工具到暂存区)'},
+             'desc': 'Staging/Uploading Malware to External Infrastructure'},
 
             {'id': 'T1583.004', 'phase': 'Resource Development',
              'pattern': re.compile(r'run-instances|create-instances|vm create|droplet create'),
              'cmd': re.compile(r'aws ec2|az vm|doctl compute|gcloud compute'),
-             'desc': 'Provisioning Rogue Cloud Instances (非法购买/启动云主机)'},
+             'desc': 'Provisioning Rogue Cloud Instances'},
 
             # =========================================================================
             # TACTIC: INITIAL ACCESS (TA0001) 
@@ -890,27 +890,27 @@ class AttckMapper:
             {'id': 'T1190', 'phase': 'Initial Access',
              'pattern': re.compile(r'java|php|node|httpd|tomcat|jboss|nginx|apache|struts|weblogic'),
              'cmd': re.compile(r'bash|sh|powershell|cmd\.exe|/bin/sh|/bin/bash'),
-             'desc': 'Web process spawning shell (Web服务启动Shell/RCE)'},
+             'desc': 'Web process spawning shell (potential RCE)'},
 
             {'id': 'T1133', 'phase': 'Initial Access',
              'pattern': re.compile(r'bash -i|/dev/tcp/|nc -e|exec sh|0>&1'),
              'cmd': re.compile(r'bash|sh|nc|ncat|netcat|socat|openssl'),
-             'desc': 'Reverse Shell Execution (反弹Shell连接)'},
+             'desc': 'Reverse Shell Execution'},
 
             {'id': 'T1091', 'phase': 'Initial Access',
              'pattern': re.compile(r'/dev/sd[b-z][0-9]|/media/|/mnt/usb'),
              'cmd': re.compile(r'mount'),
-             'desc': 'Mounting Removable Media (挂载USB设备)'},
+             'desc': 'Mounting Removable Media'},
 
             {'id': 'T1195', 'phase': 'Initial Access',
              'pattern': re.compile(r'http://|https://|git://|\.sh|\.py'),
              'cmd': re.compile(r'npm install|pip install|gem install|go get'),
-             'desc': 'Suspicious Package Installation (供应链/恶意包安装)'},
+             'desc': 'Suspicious Package Installation (supply-chain/malicious package)'},
 
             {'id': 'T1199', 'phase': 'Initial Access',
              'pattern': re.compile(r'ssh-rsa|ssh-ed25519'),
              'cmd': re.compile(r'echo.*authorized_keys|tee.*authorized_keys'),
-             'desc': 'Trusted Relationship Setup (添加SSH公钥)'},
+             'desc': 'Trusted Relationship Setup (adding SSH public key)'},
 
             # =========================================================================
             # TACTIC: EXECUTION (TA0002) 
@@ -918,37 +918,37 @@ class AttckMapper:
             {'id': 'T1059.004', 'phase': 'Execution',
              'pattern': re.compile(r'-c|--eval|\.sh|\.bash|\|.*bash|\|.*sh'),
              'cmd': re.compile(r'bash|sh|dash|zsh|ksh|fish'),
-             'desc': 'Unix Shell Script Execution (Shell脚本/管道执行)'},
+             'desc': 'Unix Shell Script Execution'},
 
             {'id': 'T1059.006', 'phase': 'Execution',
              'pattern': re.compile(r'-c|import socket|import subprocess|import os'),
              'cmd': re.compile(r'python|python2|python3'),
-             'desc': 'Python Script/Inline Execution (Python执行)'},
+             'desc': 'Python Script/Inline Execution'},
 
             {'id': 'T1609', 'phase': 'Execution',
              'pattern': re.compile(r'exec|run|attach|cp'),
              'cmd': re.compile(r'docker|kubectl|podman|crictl|ctr'),
-             'desc': 'Container Execution/Administration (容器内命令执行)'},
+             'desc': 'Container Execution/Administration'},
 
             {'id': 'T1569.002', 'phase': 'Execution',
              'pattern': re.compile(r'start|stop|restart|reload|status'),
              'cmd': re.compile(r'systemctl|service|rc-service|initctl'),
-             'desc': 'System Service Execution (系统服务控制)'},
+             'desc': 'System Service Execution'},
 
             {'id': 'T1053.001', 'phase': 'Execution',
              'pattern': re.compile(r'now|tomorrow|next|:'),
              'cmd': re.compile(r'at|atq|atrm'),
-             'desc': 'Scheduled Execution via At (At计划任务)'},
+             'desc': 'Scheduled Execution via At'},
 
             {'id': 'T1204.002', 'phase': 'Execution',
              'pattern': re.compile(r'/tmp/|/var/tmp/|/dev/shm/|/var/www/'),
              'cmd': re.compile(r'\./|bash|sh|python|perl'),
-             'desc': 'Execution from Suspicious Directory (临时目录执行)'},
+             'desc': 'Execution from Suspicious Directory'},
 
             {'id': 'T1072', 'phase': 'Execution',
              'pattern': re.compile(r'shell|command|cmd\.run|exec'),
              'cmd': re.compile(r'ansible|salt|puppet|chef-client'),
-             'desc': 'Abuse of Software Deployment Tools (运维工具滥用)'},
+             'desc': 'Abuse of Software Deployment Tools'},
 
             # =========================================================================
             # TACTIC: PERSISTENCE (TA0003) 
@@ -956,43 +956,43 @@ class AttckMapper:
             {'id': 'T1053.003', 'phase': 'Persistence',
              'pattern': re.compile(r'/etc/cron|/var/spool/cron|crontab'),
              'cmd': re.compile(r'echo|cp|mv|vi|nano|crontab'),
-             'desc': 'Cron job modification (Cron任务修改)'},
+             'desc': 'Cron job modification'},
 
             {'id': 'T1053.006', 'phase': 'Persistence',
              'pattern': re.compile(r'\.timer'),
              'cmd': re.compile(r'systemctl start|systemctl enable'),
-             'desc': 'Systemd Timer creation/modification (Systemd定时器)'},
+             'desc': 'Systemd Timer creation/modification'},
 
             {'id': 'T1547.001', 'phase': 'Persistence',
              'pattern': re.compile(
                  r'/etc/rc\.local|/etc/init\.d|\.bashrc|\.bash_profile|\.zshrc|/etc/profile|\.profile'),
              'cmd': re.compile(r'echo|cat >>|vi|nano|tee'),
-             'desc': 'Shell startup/RC script modification (Shell启动项修改)'},
+             'desc': 'Shell startup/RC script modification'},
 
             {'id': 'T1543.002', 'phase': 'Persistence',
              'pattern': re.compile(r'/etc/systemd/system/|/lib/systemd/system/|\.service'),
              'cmd': re.compile(r'echo|vi|nano|cp|systemctl enable'),
-             'desc': 'Systemd Service creation (恶意服务创建)'},
+             'desc': 'Systemd Service creation'},
 
             {'id': 'T1136.001', 'phase': 'Persistence',
              'pattern': re.compile(r'-u 0|-o|-g 0|root|sudo|wheel'),
              'cmd': re.compile(r'useradd|adduser|usermod'),
-             'desc': 'Suspicious Local Account Creation (后门账号创建)'},
+             'desc': 'Suspicious Local Account Creation'},
 
             {'id': 'T1547.006', 'phase': 'Persistence',
              'pattern': re.compile(r'\.ko'),
              'cmd': re.compile(r'insmod|modprobe|lsmod'),
-             'desc': 'Kernel Module Loading (加载内核模块/Rootkit)'},
+             'desc': 'Kernel Module Loading (potential rootkit)'},
 
             {'id': 'T1505.003', 'phase': 'Persistence',
              'pattern': re.compile(r'/var/www/|/usr/share/nginx/|\.php|\.jsp|\.asp'),
              'cmd': re.compile(r'echo|cat >>|cp|mv|wget|curl'),
-             'desc': 'Web Shell Creation (WebShell写入)'},
+             'desc': 'Web Shell Creation'},
 
             {'id': 'T1574.006', 'phase': 'Persistence',
              'pattern': re.compile(r'/etc/ld\.so\.preload'),
              'cmd': re.compile(r'echo|vi|nano|tee'),
-             'desc': 'Global Library Hijacking via ld.so.preload (全局库劫持)'},
+             'desc': 'Global Library Hijacking via ld.so.preload'},
 
             # =========================================================================
             # TACTIC: PRIVILEGE ESCALATION (TA0004) 
@@ -1000,37 +1000,37 @@ class AttckMapper:
             {'id': 'T1548.001', 'phase': 'Privilege Escalation',
              'pattern': re.compile(r'u\+s|g\+s|4[0-9]{3}|2[0-9]{3}'),
              'cmd': re.compile(r'chmod'),
-             'desc': 'Setuid/Setgid bit set (设置SUID位)'},
+             'desc': 'Setuid/Setgid bit set'},
 
             {'id': 'T1548.003', 'phase': 'Privilege Escalation',
              'pattern': re.compile(r'/etc/sudoers|/etc/sudoers\.d'),
              'cmd': re.compile(r'echo|vi|nano|visudo|cp|tee'),
-             'desc': 'Sudoers file modification (修改sudoers文件)'},
+             'desc': 'Sudoers file modification'},
 
             {'id': 'T1548.003-2', 'phase': 'Privilege Escalation',
              'pattern': re.compile(r'-S|-l|su\s+-'),
              'cmd': re.compile(r'sudo|doas|pkexec'),
-             'desc': 'Suspicious Sudo/Polkit Usage (Sudo滥用)'},
+             'desc': 'Suspicious Sudo/Polkit Usage'},
 
             {'id': 'T1574.006', 'phase': 'Privilege Escalation',
              'pattern': re.compile(r'LD_PRELOAD|LD_LIBRARY_PATH'),
              'cmd': re.compile(r'export|env'),
-             'desc': 'Shared Library Injection (LD_PRELOAD注入)'},
+             'desc': 'Shared Library Injection (LD_PRELOAD)'},
 
             {'id': 'T1068', 'phase': 'Privilege Escalation',
              'pattern': re.compile(r'-o|Makefile|\.c|\.cpp'),
              'cmd': re.compile(r'gcc|cc|clang|make|g\+\+'),
-             'desc': 'Compiling Code on Host (主机编译漏洞利用)'},
+             'desc': 'Compiling Code on Host (potential exploit build)'},
 
             {'id': 'T1055.008', 'phase': 'Privilege Escalation',
              'pattern': re.compile(r'-p|attach'),
              'cmd': re.compile(r'gdb|strace|ptrace'),
-             'desc': 'Process Injection via Ptrace/GDB (进程注入)'},
+             'desc': 'Process Injection via Ptrace/GDB'},
 
             {'id': 'T1611', 'phase': 'Privilege Escalation',
              'pattern': re.compile(r'/host|/proc/1/ns|docker\.sock|cgroup'),
              'cmd': re.compile(r'mount|docker|nsenter|capsh'),
-             'desc': 'Container Escape Attempt (容器逃逸)'},
+             'desc': 'Container Escape Attempt'},
 
             # =========================================================================
             # TACTIC: DEFENSE EVASION (TA0005) 
@@ -1038,63 +1038,63 @@ class AttckMapper:
             {'id': 'T1070.002', 'phase': 'Defense Evasion',
              'pattern': re.compile(r'/var/log|/var/adm|/var/audit'),
              'cmd': re.compile(r'rm|truncate|shred|unlink|echo "" >|cat /dev/null >'),
-             'desc': 'Log deletion or clearing (清除日志)'},
+             'desc': 'Log deletion or clearing'},
 
             {'id': 'T1070.003', 'phase': 'Defense Evasion',
              'pattern': re.compile(r'\.bash_history|\.zsh_history|HISTFILESIZE=0|unset HISTFILE|history -c'),
              'cmd': re.compile(r'rm|export|unset|set \+o history|ln -sf /dev/null'),
-             'desc': 'Clearing or Disabling Shell History (清除历史记录)'},
+             'desc': 'Clearing or Disabling Shell History'},
 
             {'id': 'T1070.006', 'phase': 'Defense Evasion',
              'pattern': re.compile(r'-r|-t|--reference'),
              'cmd': re.compile(r'touch'),
-             'desc': 'Timestomping (篡改文件时间戳)'},
+             'desc': 'Timestomping (tampering with file timestamps)'},
 
             {'id': 'T1562.001', 'phase': 'Defense Evasion',
              'pattern': re.compile(r'setenforce 0|/etc/selinux/config|aa-teardown|stop auditd|ufw disable|iptables -F'),
              'cmd': re.compile(r'setenforce|service|systemctl|ufw|iptables|apparmor_parser'),
-             'desc': 'Disabling Security Tools (禁用安全工具)'},
+             'desc': 'Disabling Security Tools'},
 
             {'id': 'T1564.001', 'phase': 'Defense Evasion',
              'pattern': re.compile(r'/\.[^/]+|/\.\s+$|/\.\.$'),
              'cmd': re.compile(r'mkdir|touch|cp|mv'),
-             'desc': 'Creation of Hidden Files/Directories (创建隐藏文件)'},
+             'desc': 'Creation of Hidden Files/Directories'},
 
             {'id': 'T1036', 'phase': 'Defense Evasion',
              'pattern': re.compile(r'/bin/sh|/bin/bash|/usr/bin/python'),
              'cmd': re.compile(r'cp.* /tmp/|cp.* /dev/shm/|cp.* /var/tmp/|mv'),
-             'desc': 'Masquerading (伪装系统工具)'},
+             'desc': 'Masquerading (disguising as a legitimate system tool)'},
 
             {'id': 'T1027.002', 'phase': 'Defense Evasion',
              'pattern': re.compile(r'-d|-o'),
              'cmd': re.compile(r'upx'),
-             'desc': 'Software Packing/Unpacking (UPX加壳)'},
+             'desc': 'Software Packing/Unpacking (UPX)'},
 
             {'id': 'T1027', 'phase': 'Defense Evasion',
              'pattern': re.compile(r'base64|openssl|uudecode|xxd'),
              'cmd': re.compile(r'base64 -d|openssl enc -d|decode|rev'),
-             'desc': 'Data decoding/obfuscation (数据混淆/解码)'},
+             'desc': 'Data decoding/obfuscation'},
 
             {'id': 'T1222', 'phase': 'Defense Evasion',
              'pattern': re.compile(r'\+i|-i|\+a|-a'),
              'cmd': re.compile(r'chattr'),
-             'desc': 'File attribute modification (文件锁定/不可变)'},
+             'desc': 'File attribute modification (immutable/lock)'},
 
             {'id': 'T1620', 'phase': 'Defense Evasion',
              'pattern': re.compile(r'memfd_create'),
              'cmd': re.compile(r'.*'),
-             'desc': 'Fileless execution via memfd (无文件执行)'},
+             'desc': 'Fileless execution via memfd'},
 
-            # 新增规则
+            # Additional rules
             {'id': 'T1611-enhanced', 'phase': 'Privilege Escalation',
              'pattern': re.compile(r'--privileged|--cap-add|SYS_ADMIN|sys_ptrace'),
              'cmd': re.compile(r'docker run|kubectl|podman|runc'),
-             'desc': 'Privileged Container Execution (特权容器执行)'},
+             'desc': 'Privileged Container Execution'},
 
             {'id': 'T1611-mount', 'phase': 'Privilege Escalation',
              'pattern': re.compile(r'/proc/self/exe|/etc/shadow|/etc/hostname'),
              'cmd': re.compile(r'cat|grep|find.*-name'),
-             'desc': 'Container attempting to access host files (容器访问宿主机文件)'},
+             'desc': 'Container attempting to access host files'},
 
             # =========================================================================
             # TACTIC: CREDENTIAL ACCESS (TA0006) 
@@ -1102,42 +1102,42 @@ class AttckMapper:
             {'id': 'T1003.008', 'phase': 'Credential Access',
              'pattern': re.compile(r'/etc/shadow|/etc/passwd|/etc/master\.passwd|/etc/security/opasswd'),
              'cmd': re.compile(r'cat|grep|awk|sed|less|more|head|tail|vi|nano'),
-             'desc': 'Access to System Password Files (读取密码文件)'},
+             'desc': 'Access to System Password Files'},
 
             {'id': 'T1003.007', 'phase': 'Credential Access',
              'pattern': re.compile(r'/proc/\d+/mem|/proc/\d+/maps|mimipenguin|linikatz'),
              'cmd': re.compile(r'dd|cat|gdb|strings'),
-             'desc': 'Process Memory Dumping for Credentials (内存抓取凭证)'},
+             'desc': 'Process Memory Dumping for Credentials'},
 
             {'id': 'T1555.003', 'phase': 'Credential Access',
              'pattern': re.compile(r'Login Data|Cookies|signons\.sqlite|logins\.json'),
              'cmd': re.compile(r'sqlite3|cat|grep|cp'),
-             'desc': 'Browser Password/Cookie Database Access (读取浏览器凭证)'},
+             'desc': 'Browser Password/Cookie Database Access'},
 
             {'id': 'T1555.005', 'phase': 'Credential Access',
              'pattern': re.compile(r'\.kdbx|\.keepass|lastpass'),
              'cmd': re.compile(r'find|locate|ls|cp'),
-             'desc': 'Password Manager Database Search (搜寻密码管理器数据库)'},
+             'desc': 'Password Manager Database Search'},
 
             {'id': 'T1552.001', 'phase': 'Credential Access',
              'pattern': re.compile(r'\.aws/credentials|\.azure/|\.gcloud/|\.kube/config|\.docker/config\.json'),
              'cmd': re.compile(r'cat|grep|less|more|head|tail'),
-             'desc': 'Cloud/Container Credential File Access (读取云/容器凭证)'},
+             'desc': 'Cloud/Container Credential File Access'},
 
             {'id': 'T1552.003', 'phase': 'Credential Access',
              'pattern': re.compile(r'password|passwd|pwd|credentials|token|api_key|secret'),
              'cmd': re.compile(r'grep|cat .*history'),
-             'desc': 'Grepping Shell History for Credentials (从历史记录搜寻密码)'},
+             'desc': 'Grepping Shell History for Credentials'},
 
             {'id': 'T1552.004', 'phase': 'Credential Access',
              'pattern': re.compile(r'id_rsa|id_dsa|id_ed25519|\.pem|\.ppk|\.key'),
              'cmd': re.compile(r'cat|grep|cp|mv'),
-             'desc': 'SSH Private Key Access (读取SSH私钥)'},
+             'desc': 'SSH Private Key Access'},
 
             {'id': 'T1110', 'phase': 'Credential Access',
              'pattern': re.compile(r'-l|-P|-C|-M'),
              'cmd': re.compile(r'hydra|medusa|ncrack|patator|john|hashcat'),
-             'desc': 'Brute Force or Password Cracking (暴力破解/密码爆破)'},
+             'desc': 'Brute Force or Password Cracking'},
 
             # =========================================================================
             # TACTIC: DISCOVERY (TA0007) 
@@ -1145,57 +1145,57 @@ class AttckMapper:
             {'id': 'T1082', 'phase': 'Discovery',
              'pattern': re.compile(r'.*'),
              'cmd': re.compile(r'uname|lscpu|lshw|lsblk|free|hostnamectl|dmidecode|uptime'),
-             'desc': 'System Information Discovery (系统信息发现)'},
+             'desc': 'System Information Discovery'},
 
             {'id': 'T1033', 'phase': 'Discovery',
              'pattern': re.compile(r'.*'),
              'cmd': re.compile(r'whoami|id|w|who|last|users'),
-             'desc': 'System Owner/User Discovery (用户/身份发现)'},
+             'desc': 'System Owner/User Discovery'},
 
             {'id': 'T1087', 'phase': 'Discovery',
              'pattern': re.compile(r'/etc/passwd|passwd'),
              'cmd': re.compile(r'cat|grep|cut|awk|getent'),
-             'desc': 'Account Discovery (账号枚举)'},
+             'desc': 'Account Discovery'},
 
             {'id': 'T1069', 'phase': 'Discovery',
              'pattern': re.compile(r'group'),
              'cmd': re.compile(r'groups|getent group|cat /etc/group'),
-             'desc': 'Permission Groups Discovery (权限组发现)'},
+             'desc': 'Permission Groups Discovery'},
 
             {'id': 'T1016', 'phase': 'Discovery',
              'pattern': re.compile(r'-a|addr|route|rules|status'),
              'cmd': re.compile(r'ifconfig|ip|route|netstat|iptables|ufw|nmcli'),
-             'desc': 'System Network Configuration Discovery (网络配置发现)'},
+             'desc': 'System Network Configuration Discovery'},
 
             {'id': 'T1018', 'phase': 'Discovery',
              'pattern': re.compile(r'.*'),
              'cmd': re.compile(r'arp|ping|fping|ip neighbor'),
-             'desc': 'Remote System Discovery (远程主机发现)'},
+             'desc': 'Remote System Discovery'},
 
             {'id': 'T1046', 'phase': 'Discovery',
              'pattern': re.compile(r'-z|-sS|-sT|-p'),
              'cmd': re.compile(r'nc|netcat|nmap|masscan|telnet'),
-             'desc': 'Network Service Discovery (端口扫描)'},
+             'desc': 'Network Service Discovery (port scanning)'},
 
             {'id': 'T1057', 'phase': 'Discovery',
              'pattern': re.compile(r'aux|ef|-e'),
              'cmd': re.compile(r'ps|top|htop|pgrep|pidof'),
-             'desc': 'Process Discovery (进程发现)'},
+             'desc': 'Process Discovery'},
 
             {'id': 'T1083', 'phase': 'Discovery',
              'pattern': re.compile(r'-name|-iname|-type f|id_rsa|\.conf|\.bak'),
              'cmd': re.compile(r'find|locate|ls -R|tree|grep -r'),
-             'desc': 'File and Directory Discovery (文件与目录发现)'},
+             'desc': 'File and Directory Discovery'},
 
             {'id': 'T1518', 'phase': 'Discovery',
              'pattern': re.compile(r'-qa|list|installed|--version'),
              'cmd': re.compile(r'rpm|dpkg|yum|apt|snap|pip|docker images'),
-             'desc': 'Software Discovery (已安装软件发现)'},
+             'desc': 'Software Discovery (installed software)'},
 
             {'id': 'T1040', 'phase': 'Discovery',
              'pattern': re.compile(r'-i|any|eth0|wlan0'),
              'cmd': re.compile(r'tcpdump|tshark|ngrep|wireshark'),
-             'desc': 'Network Sniffing (网络嗅探)'},
+             'desc': 'Network Sniffing'},
 
             # =========================================================================
             # TACTIC: LATERAL MOVEMENT (TA0008) 
@@ -1203,37 +1203,37 @@ class AttckMapper:
             {'id': 'T1021.004', 'phase': 'Lateral Movement',
              'pattern': re.compile(r'-i|ProxyCommand|StrictHostKeyChecking=no|-R|-L|-D'),
              'cmd': re.compile(r'ssh|scp|sftp'),
-             'desc': 'SSH/SCP Lateral Movement or Tunneling (SSH移动/隧道)'},
+             'desc': 'SSH/SCP Lateral Movement or Tunneling'},
 
             {'id': 'T1021.002', 'phase': 'Lateral Movement',
              'pattern': re.compile(r'//|\\\\|-U|-c'),
              'cmd': re.compile(r'smbclient|mount\.cifs|mount -t cifs|rpcclient'),
-             'desc': 'SMB/CIFS Access (访问Windows共享)'},
+             'desc': 'SMB/CIFS Access (Windows share access)'},
 
             {'id': 'T1021.001', 'phase': 'Lateral Movement',
              'pattern': re.compile(r'/v|/u|::'),
              'cmd': re.compile(r'xfreerdp|rdesktop|remmina|vncviewer'),
-             'desc': 'RDP/VNC Client Usage (远程桌面连接)'},
+             'desc': 'RDP/VNC Client Usage'},
 
             {'id': 'T1021.006', 'phase': 'Lateral Movement',
              'pattern': re.compile(r'-i|-u|-p'),
              'cmd': re.compile(r'evil-winrm|winrm'),
-             'desc': 'WinRM Usage (WinRM远程管理)'},
+             'desc': 'WinRM Usage'},
 
             {'id': 'T1563.002', 'phase': 'Lateral Movement',
              'pattern': re.compile(r'-S|SSH_AUTH_SOCK'),
              'cmd': re.compile(r'ssh'),
-             'desc': 'Potential SSH Session Hijacking (SSH会话劫持)'},
+             'desc': 'Potential SSH Session Hijacking'},
 
             {'id': 'T1570', 'phase': 'Lateral Movement',
              'pattern': re.compile(r'.*'),
              'cmd': re.compile(r'rsync'),
-             'desc': 'Lateral Tool Transfer via Rsync (使用Rsync传输工具)'},
+             'desc': 'Lateral Tool Transfer via Rsync'},
 
             {'id': 'T1550', 'phase': 'Lateral Movement',
              'pattern': re.compile(r'-k|-t|/tmp/krb5cc'),
              'cmd': re.compile(r'kinit|klist|kvno'),
-             'desc': 'Kerberos Ticket Manipulation (Kerberos票据操作)'},
+             'desc': 'Kerberos Ticket Manipulation'},
 
             # =========================================================================
             # TACTIC: COLLECTION (TA0009) 
@@ -1241,37 +1241,37 @@ class AttckMapper:
             {'id': 'T1560', 'phase': 'Collection',
              'pattern': re.compile(r'-c.*zf|cf|czf|\.tar|\.zip|\.gz|\.7z|\.rar'),
              'cmd': re.compile(r'tar|zip|gzip|bzip2|7z|rar'),
-             'desc': 'Archive/Compression of collected data (打包/压缩数据)'},
+             'desc': 'Archive/Compression of collected data'},
 
             {'id': 'T1074', 'phase': 'Collection',
              'pattern': re.compile(r'/tmp/|/var/tmp/|/dev/shm/'),
              'cmd': re.compile(r'cp|mv|tar|zip'),
-             'desc': 'Data Staging in temporary directories (临时目录暂存数据)'},
+             'desc': 'Data Staging in temporary directories'},
 
             {'id': 'T1115', 'phase': 'Collection',
              'pattern': re.compile(r'-o|-selection clipboard|-i'),
              'cmd': re.compile(r'xclip|xsel|pbcopy|pbpaste'),
-             'desc': 'Clipboard data collection (剪贴板窃取)'},
+             'desc': 'Clipboard data collection'},
 
             {'id': 'T1113', 'phase': 'Collection',
              'pattern': re.compile(r'-window root|-quality|\.png|\.jpg'),
              'cmd': re.compile(r'scrot|import|screencapture|xwd|gnome-screenshot|spectacle'),
-             'desc': 'Screen capture activity (屏幕截图)'},
+             'desc': 'Screen capture activity'},
 
             {'id': 'T1056.001', 'phase': 'Collection',
              'pattern': re.compile(r'/dev/input/event|--start --log'),
              'cmd': re.compile(r'showkey|logkeys|thc-vlogger'),
-             'desc': 'Keylogging/Input Capture (键盘记录)'},
+             'desc': 'Keylogging/Input Capture'},
 
             {'id': 'T1123', 'phase': 'Collection',
              'pattern': re.compile(r'-d|--duration|-f cd'),
              'cmd': re.compile(r'arecord|rec|ffmpeg|audacity'),
-             'desc': 'Audio capture (录音)'},
+             'desc': 'Audio capture'},
 
             {'id': 'T1114', 'phase': 'Collection',
              'pattern': re.compile(r'/var/mail|/var/spool/mail'),
              'cmd': re.compile(r'cat|grep|less|head|tail|fetchmail'),
-             'desc': 'Local Email Collection (邮件窃取)'},
+             'desc': 'Local Email Collection'},
 
             # =========================================================================
             # TACTIC: COMMAND AND CONTROL (TA0011) 
@@ -1279,22 +1279,22 @@ class AttckMapper:
             {'id': 'T1071', 'phase': 'Command and Control',
              'pattern': re.compile(r'.*'),
              'cmd': re.compile(r'curl|wget|nc|ncat|netcat|socat|telnet'),
-             'desc': 'Common Download/C2 utilities (常用下载/C2工具)'},
+             'desc': 'Common Download/C2 utilities'},
 
             {'id': 'T1090', 'phase': 'Command and Control',
              'pattern': re.compile(r'tcp-listen|forward|proxy|tunnel'),
              'cmd': re.compile(r'socat|ngrok|frpc|frps|chisel|gost|websocat'),
-             'desc': 'Proxy/Tunneling tool usage (代理/隧道工具)'},
+             'desc': 'Proxy/Tunneling tool usage'},
 
             {'id': 'T1219', 'phase': 'Command and Control',
              'pattern': re.compile(r'.*'),
              'cmd': re.compile(r'teamviewer|anydesk|logmein|vncserver|screen|tmux'),
-             'desc': 'Remote Access Software/Terminal Multiplexing (远控软件/终端复用)'},
+             'desc': 'Remote Access Software/Terminal Multiplexing'},
 
             {'id': 'T1105', 'phase': 'Command and Control',
              'pattern': re.compile(r'-O|--output|-o'),
              'cmd': re.compile(r'curl|wget'),
-             'desc': 'Ingress Tool Transfer (下载恶意文件)'},
+             'desc': 'Ingress Tool Transfer'},
 
             # =========================================================================
             # TACTIC: EXFILTRATION (TA0010) 
@@ -1302,22 +1302,22 @@ class AttckMapper:
             {'id': 'T1048', 'phase': 'Exfiltration',
              'pattern': re.compile(r'put|mput|upload|STOR'),
              'cmd': re.compile(r'ftp|lftp|tftp|sftp'),
-             'desc': 'Exfiltration via FTP/SFTP (FTP文件上传)'},
+             'desc': 'Exfiltration via FTP/SFTP'},
 
             {'id': 'T1567', 'phase': 'Exfiltration',
              'pattern': re.compile(r'copy|sync|upload|--upload-file|-T'),
              'cmd': re.compile(r'rclone|gdrive|mega-cmd|aws|gsutil|az|curl'),
-             'desc': 'Exfiltration to Cloud Storage/Web Service (上传至云存储)'},
+             'desc': 'Exfiltration to Cloud Storage/Web Service'},
 
             {'id': 'T1020', 'phase': 'Exfiltration',
              'pattern': re.compile(r'/dev/tcp/|/dev/udp/'),
              'cmd': re.compile(r'bash|sh|ksh|zsh'),
-             'desc': 'Exfiltration via network redirection (Socket直接回传)'},
+             'desc': 'Exfiltration via network redirection (direct socket transfer)'},
 
             {'id': 'T1052', 'phase': 'Exfiltration',
              'pattern': re.compile(r'/dev/sd[b-z]|/media/|/mnt/usb'),
              'cmd': re.compile(r'mount|dd|cp'),
-             'desc': 'Exfiltration to Physical Medium (物理介质复制)'},
+             'desc': 'Exfiltration to Physical Medium'},
 
             # =========================================================================
             # TACTIC: IMPACT (TA0040) 
@@ -1325,37 +1325,37 @@ class AttckMapper:
             {'id': 'T1485', 'phase': 'Impact',
              'pattern': re.compile(r'-rf|--no-preserve-root|if=/dev/zero|if=/dev/urandom'),
              'cmd': re.compile(r'rm|shred|dd|wipe|srm'),
-             'desc': 'Data destruction attempt (数据破坏/擦除)'},
+             'desc': 'Data destruction attempt'},
 
             {'id': 'T1486', 'phase': 'Impact',
              'pattern': re.compile(r'--encrypt|-c|--passphrase'),
              'cmd': re.compile(r'gpg|openssl|7z|zip|ccrypt|bcrypt'),
-             'desc': 'File Encryption/Ransomware Behavior (勒索加密)'},
+             'desc': 'File Encryption/Ransomware Behavior'},
 
             {'id': 'T1496', 'phase': 'Impact',
              'pattern': re.compile(r'stratum\+tcp|pool|user|nicehash|minergate'),
              'cmd': re.compile(r'xmrig|minerd|cpuminer|ethminer|cgminer'),
-             'desc': 'Cryptomining Activity (挖矿劫持)'},
+             'desc': 'Cryptomining Activity'},
 
             {'id': 'T1489', 'phase': 'Impact',
              'pattern': re.compile(r'stop|disable|kill'),
              'cmd': re.compile(r'systemctl|service|rc-service|killall|pkill'),
-             'desc': 'Stopping System Services (停止关键服务)'},
+             'desc': 'Stopping System Services'},
 
             {'id': 'T1529', 'phase': 'Impact',
              'pattern': re.compile(r'-h|-r|now|0|6'),
              'cmd': re.compile(r'shutdown|reboot|halt|poweroff|init'),
-             'desc': 'System Shutdown/Reboot (系统关闭/重启)'},
+             'desc': 'System Shutdown/Reboot'},
 
             {'id': 'T1561.002', 'phase': 'Impact',
              'pattern': re.compile(r'if=/dev/zero|if=/dev/urandom|of=/dev/sd|of=/dev/vd'),
              'cmd': re.compile(r'dd|cat|cp'),
-             'desc': 'Disk Wiping Activity (磁盘擦除)'},
+             'desc': 'Disk Wiping Activity'},
 
             {'id': 'T1491', 'phase': 'Impact',
              'pattern': re.compile(r'>|/var/www/html|index\.html|/etc/motd'),
              'cmd': re.compile(r'echo|cp|mv|cat'),
-             'desc': 'Website/System Defacement (网站/系统篡改)'}
+             'desc': 'Website/System Defacement'}
         ]
 
     def check_node(self, node):
@@ -1415,7 +1415,7 @@ class AttckMapper:
 
         args_str = " ".join(argv[1:])
 
-        # 4. 遍历规则进行匹配
+        # 4. Iterate through the rules to find a match
         for r in self.rules:
             rule_id = r.get('id')
             tool_regex = r.get('cmd')  
