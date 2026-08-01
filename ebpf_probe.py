@@ -31,7 +31,7 @@ import re
 import time
 import resource
 import json
-import threading  # <--- NEW: For background interface scanning
+import threading  # For background interface scanning
 
 # ============================================================================
 # Global Logging State
@@ -108,7 +108,7 @@ struct mmap_data_t {
 struct __attribute__((packed)) syscall_event_t {
     u64 pid; 
     u64 ppid; 
-    u64 cgroup_id;     // <--- NEW: Unique Container ID
+    u64 cgroup_id;     // Unique Container ID
     u32 uid; 
     char comm[TASK_COMM_LEN];
     u32 event_type; 
@@ -318,7 +318,7 @@ int trace_mmap_syscall(struct tracepoint__syscalls__sys_enter_mmap *ctx) {
     u32 key = 0; struct syscall_event_t *event = syscall_buffer.lookup(&key);
     if (!event) return 0;
     __builtin_memset(event, 0, sizeof(*event));
-    event->event_type = 9; // 定义 9 为 MMAP
+    event->event_type = 9; // Define 9 as MMAP
     fill_header(event);
 
     event->data.mmap_evt.addr = (u64)ctx->addr;
@@ -469,7 +469,7 @@ int socket_filter(struct __sk_buff *skb) {
 # ============================================================================
 # Python Userspace Code
 # ============================================================================
-# [2.1] 新增 MmapData 结构体映射
+# [2.1] New MmapData struct mapping
 class MmapData(ct.Structure):
     _pack_ = 1
     _fields_ = [
@@ -485,7 +485,7 @@ class SyscallEvent(ct.Structure):
     _fields_ = [
         ("pid", ct.c_uint64),
         ("ppid", ct.c_uint64),
-        ("cgroup_id", ct.c_uint64),  # <--- NEW FIELD
+        ("cgroup_id", ct.c_uint64),  # NEW FIELD
         ("uid", ct.c_uint32),
         ("comm", ct.c_char * 16),
         ("event_type", ct.c_uint32),
@@ -1109,10 +1109,10 @@ def handle_syscall_event(cpu, data, size):
 
             # Map req_code to name...
             req_name = f"PTRACE_CMD_{req_code}"
-            # [FIX] 增加对 TRACEME 的解析
+            # [FIX] Added parsing support for TRACEME
             if req_code == 0:
                 req_name = "PTRACE_TRACEME"
-                target_pid = ev.ppid  # 对于 TRACEME，目标其实是父进程，或者说自己将自己交给父进程
+                target_pid = ev.ppid  # For TRACEME, the target is actually the parent process - i.e. the process is handing itself over to its tracer
             if req_code == 1:
                 req_name = "PTRACE_PEEKTEXT"
             elif req_code == 4:
@@ -1165,26 +1165,26 @@ def handle_syscall_event(cpu, data, size):
             })
 
 
-        elif ev.event_type == 9:  # MMAP 解析 (只审计 EXEC)
+        elif ev.event_type == 9:  # MMAP parsing (EXEC-mapped regions only)
             mmap_data = ct.cast(ev.data, ct.POINTER(MmapData)).contents
             prot = mmap_data.prot
-            # [关键修改] 核心过滤器：如果权限中不包含 EXEC (0x4)，直接忽略
-            # 这将屏蔽掉所有普通的库加载(RX)和文件读写(RW)操作
+            # [KEY CHANGE] Core filter: if the permission bits do not include EXEC (0x4), ignore immediately.
+            # This filters out all ordinary library loads (RX) and file read/write (RW) operations.
             if not (prot & 0x4):
                 return
             addr = mmap_data.addr
             length = mmap_data.len
-            # 解析权限位 (既然能运行到这里，肯定有 EXEC)
+            # Decode permission bits (execution reached here, so EXEC is guaranteed to be set)
             prot_list = ["EXEC"]
             if prot & 0x1: prot_list.insert(0, "READ")
-            if prot & 0x2: prot_list.insert(1, "WRITE")  # W+X 是最高危特征
+            if prot & 0x2: prot_list.insert(1, "WRITE")  # W+X is the highest-risk signature
             p_str = "|".join(prot_list)
-            # 只有 W+X (可写可执行) 才是真正的红色警报，单纯的 RX (只读执行) 可能是加载代码段
+            # Only W+X (writable and executable) is a true red-alert; plain RX (read-execute only) may just be code loading
             if (prot & 0x2) and (prot & 0x4):
                 color = C.FAIL
                 risk_label = f" {C.FAIL}{C.BOLD}[!] SHELLCODE (W+X){C.ENDC}"
             else:
-                color = C.OKBLUE  # 或者是 OKGREEN，表示普通的加载可执行代码
+                color = C.OKBLUE  # or OKGREEN, indicating a normal executable code load
                 risk_label = " (Executable Code)"
             header = format_header(ts_str, "MMAP", color, ev.pid, ev.uid, ev.ppid, ev.cgroup_id, comm)
             print(f"{header} 🧠 Map: {hex(addr)} Size: {length} Prot: [{p_str}]{risk_label}")
@@ -1199,7 +1199,7 @@ def handle_syscall_event(cpu, data, size):
                 "addr": hex(addr),
                 "len": length,
                 "prot": p_str,
-                "is_exec": True  # 既然记录了，肯定是 True
+                "is_exec": True  # Always True since we only log EXEC-mapped regions
             })
 
     except Exception:
@@ -1253,7 +1253,7 @@ def main():
         b.attach_tracepoint(tp="syscalls:sys_enter_ptrace", fn_name="trace_ptrace_syscall")
         b.attach_tracepoint(tp="syscalls:sys_enter_unlinkat", fn_name="trace_unlinkat_syscall")
         b.attach_tracepoint(tp="syscalls:sys_enter_setuid", fn_name="trace_setuid_syscall")
-        # 在 b.attach_tracepoint 列表中添加
+        # Added to the b.attach_tracepoint list
         b.attach_tracepoint(tp="syscalls:sys_enter_mmap", fn_name="trace_mmap_syscall")
 
         fn = b.load_func("socket_filter", BPF.SOCKET_FILTER)
