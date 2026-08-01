@@ -69,6 +69,10 @@ The system is exposed as an **MCP server** (`KeXDR-Server`), so any MCP-compatib
 | `prompt` | Reference operator prompt for driving the "Egress-Centric Provenance Analysis" workflow via an MCP-compatible LLM client |
 | `CAMPAIGN_DOSSIER.md` | Ground-truth cross-reference for 15 validated real-world attack campaigns (A1–A15), mapping each to its raw audit log, paper results, and public CVE/threat-intel references |
 | `attack scenario.pdf` | attack evidence screenshots |
+| `baselines/CAPTAIN.py` | Baseline reproduction: differentiable tag-propagation provenance analysis |
+| `baselines/CONTEXTS.py` | Baseline reproduction: semantic (Sigma + CVE + SBERT) provenance triage |
+| `baselines/DEPCOMM.py` | Baseline reproduction: random-walk embedding + overlapping community summarization |
+| `baselines/HOLMES.py` | Baseline reproduction: MITRE ATT&CK kill-chain scenario graph construction |
 | `logo.svg` | Project logo |
 | `LICENSE` | Research-only, non-commercial license terms |
 
@@ -113,6 +117,19 @@ python3 kexdr_mcp.py
 
 The reference prompt instructs the client to triage outbound-only communities first, trace each one backward through the time-stitched lineage to its root cause, assign a verdict, and compile everything into a single HTML report.
 
+## Baseline Reproductions
+
+To situate keXDR against prior provenance-based detection work, this repository includes standalone, from-scratch reproductions of four representative baselines. Each script ingests the same rotated eBPF audit logs as `kexdr_mcp.py`, applies the baseline's core detection algorithm, and renders its own interactive HTML visualization plus a plain-text alert report — so results can be compared directly against keXDR on the same input data.
+
+| Script | Baseline idea | Core mechanism | Output |
+|---|---|---|---|
+| `baselines/CAPTAIN.py` | Differentiable tag-propagation provenance analysis | A small PyTorch model learns per-entity initial integrity tags, per-edge-type propagation rates, and per-edge-type alarm thresholds via gradient descent over the provenance graph; anomalous events are those whose learned tag falls below their learned threshold | `captain.html` (context-isolation graph viewer), `captain.txt` |
+| `baselines/CONTEXTS.py` | Semantic, knowledge-base-grounded triage | Sigma rule matching flags candidate process-of-interest (POI) nodes, which are then scored for relevance against a CVE knowledge base using SBERT sentence embeddings (cosine similarity); the graph is pruned to POIs plus the shortest paths connecting them | `contexts.html` (Sigma/CVE-tagged graph viewer) |
+| `baselines/DEPCOMM.py` | Graph summarization via community structure | Hierarchical random walks over the provenance graph feed a Word2Vec (SkipGram) model to learn process embeddings; Fuzzy C-Means clustering assigns processes (and their neighboring resources) to possibly-overlapping communities, which are then compressed (redundant sibling-process merging) and ranked via a 4-dimensional InfoPath score (POI relevance, I/O role, node uniqueness, path length decay) | `depcomm.html` (per-community dashboard), `depcomm.txt` |
+| `baselines/HOLMES.py` | MITRE ATT&CK kill-chain correlation | A large ATT&CK rule set (Reconnaissance → Impact) tags POI nodes; causally-connected POIs are grouped into High-level Scenario Graphs (HSGs) using full descendant/ancestor reachability (not just shortest path), and a kill-chain state machine only credits a tactic toward the severity score if it is either a foundational-phase action or has a causally active upstream tactic — pruning graphs below a severity threshold | `holmes.html` (ranked HSG viewer), `holmes.txt` |
+
+All four scripts share the same log-parsing conventions as the main sensor pipeline (process/file/network node types, `p_`/`f_`/`n_` ID prefixes) so their output can be cross-checked node-for-node against keXDR's own provenance graph on the campaigns listed in [`CAMPAIGN_DOSSIER.md`](./CAMPAIGN_DOSSIER.md).
+
 ## Ground-Truth Validation
 
 keXDR's detection results have been cross-validated against **15 confirmed real-world attack campaigns (A1–A15)**, each traced to a specific raw audit log and independently corroborated against public CVE records and vendor threat-intel reporting (Log4j, Docker API abuse, ActiveMQ RCE, Condi/Orbit botnet, telnetd RCE, and more).
@@ -149,5 +166,4 @@ In short:
 
 ## Disclaimer
 
-This project is a research prototype released in support of academic work on provenance-based intrusion detection. 
-
+This project is a research prototype released in support of academic work on provenance-based intrusion detection.
