@@ -41,8 +41,7 @@ not change.
 
 （**latest**） is the build that runs in production. It is the one under active development.
 
-Their log formats are not interchangeable. Point each version at the data it was built
-for.
+Their log formats are not interchangeable, but both of them can run on the release dataset. 
 
 ---
 
