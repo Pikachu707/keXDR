@@ -127,7 +127,7 @@ python3 kexdr_mcp.py
 
 Runs as an MCP server over stdio. All output goes to stderr, so the transport stays clean.
 
-**3. Connect a client.**, in `~/.Kimi/settings.json`:
+**3. Connect a client.**, in `~/.your_LLM/settings.json`:
 
 ```json
 {
