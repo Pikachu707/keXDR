@@ -34,7 +34,6 @@ The system has two components:
 
 ## Versions
 
-Two lines are maintained.
 
 **v1** is a simplified, stable build. Use it to reproduce results over the processed
 datasets: it is frozen, has no moving parts, and its behaviour on the released logs does
