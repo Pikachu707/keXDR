@@ -35,11 +35,11 @@ The system has two components:
 ## Versions
 
 
-（**v1**） is a simplified, stable build. Use it to reproduce results over the processed
+1.（**v1**） is a simplified, stable build. Use it to reproduce results over the processed
 datasets: it is frozen, has no moving parts, and its behaviour on the released logs does
 not change.
 
-（**latest**） is the build that runs in production. It is the one under active development.
+2.（**latest**） is the build that runs in production. It is the one under active development.
 
 Their log formats are not interchangeable, but both of them can run on the release dataset. 
 
