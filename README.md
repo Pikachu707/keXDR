@@ -39,7 +39,7 @@ The system has two components:
 
 2.（**latest**） is the build that runs in production environments. It is the one under active development.
 
-Their log formats are not interchangeable, but both of them can run on the release dataset. 
+Both of them can run on the release dataset. 
 
 ---
 
