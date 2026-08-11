@@ -11,12 +11,6 @@ confirmed campaigns (A1–A15), it shows which raw audit file backs it, what
 the paper reports about it, and which public reference(s) independently
 corroborate the CVE/malware family.
 
-> **Which build produced these results.** The campaigns below were captured and
-> processed with **v1**, the frozen build kept for reproducing the released datasets.
-> Reproduce them with v1. The **latest** build changes how flows are attributed and
-> writes a different log schema, so its output on the same traffic is not expected to
-> match record-for-record.
-
 ---
 
 ## How to read this table
