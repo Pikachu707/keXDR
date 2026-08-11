@@ -35,8 +35,7 @@ The system has two components:
 ## Versions
 
 
-1.（**v1**） is a simplified and compatible build. Use it to reproduce results over the processed
-datasets: it is frozen, has no moving parts, and its behaviour on the released logs does
+1.（**v1**） is a simplified and compatible build. It is frozen, has no moving parts, and its behaviour on the released logs does
 not change.
 
 2.（**latest**） is the build that runs in production. It is the one under active development.
