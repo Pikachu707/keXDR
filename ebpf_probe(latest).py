@@ -2202,7 +2202,7 @@ def main():
     parser.add_argument("--coalesce-ms", type=int, default=5000,
                         help="Per-artifact coalescing window in ms (default 5000)")
     parser.add_argument("--scan-interval", type=float, default=2.0,
-                        help="Interface tracker period in seconds (paper: 2 s)")
+                        help="Interface tracker period in seconds (default 2)")
     parser.add_argument("--stats-interval", type=float, default=60.0,
                         help="Seconds between attribution statistics lines")
     args = parser.parse_args()
