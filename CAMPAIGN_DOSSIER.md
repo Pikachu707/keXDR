@@ -27,7 +27,7 @@ corroborate the CVE/malware family.
 
 ---
 
-## Master Table (A1–A15)
+## Table (A1–A15)
 
 | A-ID | CVE / Threat Family | Raw SIEM File | Screenshot Evidence | AV (E/N) | K-Full | Ref. |
 |---|---|---|---|---|---|---|
@@ -49,7 +49,7 @@ corroborate the CVE/malware family.
 
 ---
 
-## Paper Table IIA grouping cross-check
+## Table grouping cross-check
 
 | Paper Group | A-IDs | Raw Audit File(s) |
 |---|---|---|
