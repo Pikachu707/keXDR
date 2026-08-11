@@ -14,156 +14,266 @@
 
 ## Overview
 
-**keXDR** is a kernel-native host–network collaborative attack provenance system. It fuses full-kernelspace eBPF telemetry with an egress-centric, LLM-driven forensics loop: instead of starting from a historical entry point, keXDR starts from *active outbound network activity* — the traffic most likely to represent a live C2 channel — and reconstructs the full attack chain backward to its root cause using a persistent time-stitching memory engine.
+**keXDR** is a kernel-native host–network attack provenance system. A single in-kernel
+observation point collects process, file and network events together, so a packet and
+the syscall that produced it are recorded against the same kernel object rather than
+reconciled afterwards from addresses and timestamps. The resulting provenance graph is
+exposed to an LLM through an MCP server, which triages it under a bounded context budget
+and a read-only tool surface.
 
-The system is exposed as an **MCP server** (`KeXDR-Server`), so any MCP-compatible LLM client (Claude, Gemini CLI, etc.) can drive the investigation end-to-end: ingest logs, cluster network communities, walk each community's causal history, assign a verdict, and emit a shareable HTML report — with no manual graph wrangling required.
+The system has two components:
 
-<p align="center">
-  <em>Kernel sensor → Provenance graph → Egress-first LLM forensics loop → HTML incident report</em>
-</p>
+| | |
+|---|---|
+| `ebpf_probe.py` | Kernel-side collector. Writes rotating JSON logs. |
+| `kexdr_mcp.py` | Orchestrator and MCP server. Builds the graph, clusters it, scores it, serves it to an agent. |
 
-## Key Features
+*Kernel sensor → provenance graph → budgeted LLM triage → HTML incident report*
 
-**Kernel-space audit sensor** (`ebpf_probe.py`)
-- 🐳 Container-aware: tracks cgroup ID to distinguish host vs. Docker-originated activity, with automatic veth/docker0 interface discovery
-- 🚀 Process execution capture (`execve`, full command + arguments)
-- 📁 File monitoring (`openat`, read/write activity)
-- 🔌 Network auditing across L3/L4 headers with L7 payload parsing (HTTP, DNS, MySQL, etc.)
-- 👻 Fileless-malware detection via `memfd_create`
-- 💉 Code-injection detection via `ptrace`
-- 🗑️ Anti-forensics detection via `unlinkat` (deletion attempts)
-- ⚠️ Privilege-escalation alerts on UID changes / `setuid`
-- 💾 Automatic log rotation into `YYYY-MM-DD/audit_HH.json` shards
+---
 
-**Provenance & forensics engine** (`kexdr_mcp.py`)
-- **Hippocampus time-stitching memory**: a persistent SQLite-backed store that links artifacts across log rotations by shared identity keys (PID, socket, file path), so process lineage and "Ghost" nodes (implants planted before the current logging window) can be recovered even when the planting event itself has aged out of the active window.
-- **Egress-first community detection**: Leiden clustering over the provenance graph isolates distinct outbound network "communities," letting an analyst (human or LLM) triage active C2 candidates before doing any deep-dive tracing.
-- **MITRE ATT&CK technique mapping**: a rule engine tags observed command lines and process behavior against ATT&CK techniques across the full kill chain, from Reconnaissance (T1595.x) through execution and persistence.
-- **MCP tool surface**: the entire workflow — workspace setup, log ingestion, community listing, per-community topology retrieval, AI-verdict persistence, and final report generation — is exposed as MCP tools, so an LLM client can run the full "Deep Forensics Loop" autonomously.
-- **Interactive HTML dashboard**: a self-contained multi-view report (`dashboard.html`) for exploring reconstructed communities, Ghost-node context, and time-stitched links.
+## Versions
+
+Two lines are maintained.
+
+**v1** is a simplified, stable build. Use it to reproduce results over the processed
+datasets: it is frozen, has no moving parts, and its behaviour on the released logs does
+not change.
+
+**latest** is the build that runs in production. It is the one under active development
+and the one the rest of this document describes.
+
+Their log formats are not interchangeable. Point each version at the data it was built
+for.
+
+---
 
 ## Architecture
 
 ```
-┌──────────────────┐     ┌────────────────────┐     ┌───────────────────────────┐     ┌────────────────────┐
-│   ebpf_probe.py   │ --> │   audit_HH.json     │ --> │   kexdr_mcp.py             │ --> │   HTML incident      │
-│  (kernel sensor)  │     │  (rotating logs)    │     │   MCP server:               │     │   report /            │
-│                   │     │                     │     │   Hippocampus + Leiden +    │     │   dashboard.html      │
-│                   │     │                     │     │   ATT&CK mapping            │     │                     │
-└──────────────────┘     └────────────────────┘     └──────────────┬──────────────┘     └────────────────────┘
-                                                                     │
-                                                          ┌──────────▼──────────┐
-                                                          │  MCP client (LLM)    │
-                                                          │  drives the egress-  │
-                                                          │  first forensics loop│
-                                                          └──────────────────────┘
+┌──────────────────┐    ┌──────────────────┐    ┌───────────────────────────┐    ┌──────────────────┐
+│  ebpf_probe.py   │───▶│  audit_HH.json   │───▶│  kexdr_mcp.py             │───▶│  HTML incident   │
+│  kernel sensor   │    │  rotating logs   │    │  MCP server:              │    │  report          │
+│                  │    │                  │    │  stitching + Leiden +     │    │  dashboard.html  │
+│  sk_storage      │    │                  │    │  ATT&CK + budgeting       │    │                  │
+└──────────────────┘    └──────────────────┘    └─────────────┬─────────────┘    └──────────────────┘
+                                                              │
+                                                  ┌───────────▼───────────┐
+                                                  │  MCP client (LLM)     │
+                                                  │  reads, submits a     │
+                                                  │  verdict, acts never  │
+                                                  └───────────────────────┘
 ```
 
-## Repository Structure
-
-| File | Description |
-|---|---|
-| `ebpf_probe.py` | Full-kernelspace eBPF sensor built on BCC; captures process, file, and network events into rotating JSON logs |
-| `kexdr_mcp.py` | MCP server (`KeXDR-Server`): Hippocampus time-stitching memory, Leiden community detection, ATT&CK mapping, and HTML report generation |
-| `dashboard.html` | Self-contained interactive report template rendered by the MCP server |
-| `prompt` | Reference operator prompt for driving the "Egress-Centric Provenance Analysis" workflow via an MCP-compatible LLM client |
-| `CAMPAIGN_DOSSIER.md` | Ground-truth cross-reference for 15 validated real-world attack campaigns (A1–A15), mapping each to its raw audit log, paper results, and public CVE/threat-intel references |
-| `attack scenario.pdf` | attack evidence screenshots |
-| `baselines/CAPTAIN.py` | Baseline reproduction: differentiable tag-propagation provenance analysis |
-| `baselines/CONTEXTS.py` | Baseline reproduction: semantic (Sigma + CVE + SBERT) provenance triage |
-| `baselines/DEPCOMM.py` | Baseline reproduction: random-walk embedding + overlapping community summarization |
-| `baselines/HOLMES.py` | Baseline reproduction: MITRE ATT&CK kill-chain scenario graph construction |
-| `logo.svg` | Project logo |
-| `LICENSE` | Research-only, non-commercial license terms |
+---
 
 ## Requirements
 
-- Linux with kernel support for eBPF/BCC
-- Python 3
-- [`bcc`](https://github.com/iovisor/bcc) Python bindings
-- `python-igraph` and `leidenalg` (community detection; the server degrades gracefully with a warning if unavailable)
-- `mcp` (Python MCP SDK, for `mcp.server.fastmcp.FastMCP`)
-- An MCP-compatible LLM client (e.g. Claude, Gemini CLI) to drive the forensics loop
+- Linux 5.8–6.8 with BTF and cgroup v2
+- Root, and `bcc` Python bindings
+- `python-igraph` + `leidenalg` (clustering; the server runs without them but treats the
+  graph as one community)
+- `mcp` (Python SDK, for `mcp.server.fastmcp`)
+- An MCP-compatible LLM client
 
 ```bash
+sudo apt install bpfcc-tools python3-bpfcc linux-headers-$(uname -r)
 pip install python-igraph leidenalg mcp
-sudo apt install bpfcc-tools python3-bpfcc
 ```
+
+Helper availability differs by BPF program type across kernels. The loader attaches what
+it can, reports what it could not, and degrades the affected records explicitly — it never
+reports an attribution it did not establish. Check the startup banner:
+
+```
+Monitoring active. Attribution mode: EXACT (kappa)
+```
+
+`PARTIAL` means active opens bind but passive opens and connected UDP do not.
+`DEGRADED` means the socket key is unavailable entirely and every network record will be
+tagged `degraded`.
+
+---
 
 ## Usage
 
-**1. Capture kernel telemetry** (requires root):
+**1. Collect** (root):
 
 ```bash
-sudo python3 ebpf_probe.py -i <interface> -o ./logs
+sudo python3 ebpf_probe.py -o ./audit_logs
 ```
 
-**2. Start the MCP server:**
+Logs land in `./audit_logs/YYYY-MM-DD/audit_HH.json`. A periodic line reports what share
+of traffic resolved through the socket key:
+
+```
+[stats] syscall=48213 net=9022 exact=8841 (98.0%) degraded=181 dup_dropped=44 ...
+```
+
+| Flag | Purpose |
+|---|---|
+| `-o, --output` | Log directory |
+| `-i, --iface` | Interface for the fallback collector (default: auto-discover) |
+| `--cgroup` | cgroup v2 mount point (default `/sys/fs/cgroup`) |
+| `--no-kappa` | Skip socket binding; everything degrades |
+| `--no-degraded-leg` | Do not attach the raw-socket fallback |
+| `--no-coalesce` | Report every artifact access rather than one per window |
+| `--coalesce-ms` | Coalescing window, ms (default 5000) |
+| `--scan-interval` | Interface discovery period, s (default 2) |
+| `--stats-interval` | Seconds between statistics lines (default 60) |
+
+**2. Serve:**
 
 ```bash
 python3 kexdr_mcp.py
 ```
 
-**3. Drive the investigation from an MCP-compatible LLM client**, using the operator prompt in [`prompt`](./prompt) as a template. The workflow follows a fixed sequence of MCP tool calls:
+Runs as an MCP server over stdio. All output goes to stderr, so the transport stays clean.
 
-| Tool | Purpose |
+**3. Connect a client.** For Gemini CLI, in `~/.gemini/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "kexdr": {
+      "command": "python3",
+      "args": ["/path/to/kexdr_mcp.py"],
+      "cwd": "/path/to/keXDR",
+      "timeout": 60000
+    }
+  }
+}
+```
+
+`cwd` matters: the stitching store `kexdr_memory.db` is created relative to it.
+
+**4. Drive the investigation**, using [`prompt`](./prompt) as a template. It instructs the
+client to triage outbound communities first, trace each back through the stitched lineage
+to its root cause, submit a verdict, and compile the result into a single HTML report.
+
+---
+
+## MCP tool surface
+
+Read-only tools are always available. Operator tools can be withheld from the same
+registry the agent sees by setting `KEXDR_READONLY_REGISTRY=1`.
+
+| Tool | Class | Purpose |
+|---|---|---|
+| `setup_workspace(host_ip, output_path)` | operator | Point the orchestrator at a host and an output file |
+| `ingest_logs(pattern)` | operator | Load a glob of logs and build the graph |
+| `write_html_report()` | operator | Render the interactive report |
+| `list_communities(only_outbound, include_non_candidates)` | read-only | Communities eligible for serialisation |
+| `get_community_topology(community_id)` | read-only | One community's subgraph, budgeted and typed |
+| `get_entity(community_id, entity_id)` | read-only | One entity in full |
+| `submit_verdict(community_id, verdict, confidence, cited_entities, summary_markdown)` | read-only w.r.t. state | Hand a grounded verdict to the orchestrator |
+| `get_alerts()` | read-only | Current alert set |
+| `get_pipeline_stats()` | read-only | Counts and active parameters |
+| `save_ai_analysis(community_id, markdown)` | annotation | Attach a narrative; changes no detection state |
+
+`submit_verdict` does not act. The orchestrator applies the verdict, and only after
+checking that the cited entity ids resolve in the serialised subgraph — a report whose
+citations do not resolve is queued for human review rather than acted on.
+
+---
+
+## Configuration
+
+Every tunable is an environment variable, so a change is visible in the run log.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `KEXDR_B_MAX` | `200000` | Serialisation budget, bytes |
+| `KEXDR_RHO` | `0.7` | Share of the budget allocated before the reserve |
+| `KEXDR_QUANT` | `256` | Budget quantisation for the packing step, bytes |
+| `KEXDR_OMEGA_CRIT` | `800` | Severity at which a node may draw on the reserve |
+| `KEXDR_DELTA_MAX_DAYS` | `7` | Recall horizon and retention, days |
+| `KEXDR_THETA_GHOST` / `_MEM` / `_NET` | `0` / `0` / `1` | Candidate predicate thresholds |
+| `KEXDR_SUPPRESSION` | `0` | Allow a verdict to remove an alert |
+| `KEXDR_TAU_S` | `0.9` | Confidence floor for suppression |
+| `KEXDR_READONLY_REGISTRY` | `0` | Withhold operator verbs from the registry |
+
+---
+
+## Repository structure
+
+| File | Description |
 |---|---|
-| `setup_workspace(host_ip, output_path)` | Initialize the analysis workspace and report output path |
-| `ingest_logs(pattern)` | Load a glob of rotated audit logs into the provenance graph |
-| `list_communities(only_outbound)` | Return Leiden-clustered network communities, optionally filtered to active egress only |
-| `get_community_topology(community_id)` | Retrieve the full causal subgraph for one community, including any recovered Ghost node |
-| `save_ai_analysis(community_id, markdown)` | Persist the analyst's (LLM's) verdict and narrative for a community |
-| `write_html_report()` | Render the final interactive HTML report |
+| `ebpf_probe.py` | Kernel-side collector |
+| `kexdr_mcp.py` | Orchestrator and MCP server |
+| `dashboard.html` | Interactive report template |
+| [`prompt`](./prompt) | Reference operator prompt for driving the workflow |
+| [`CAMPAIGN_DOSSIER.md`](./CAMPAIGN_DOSSIER.md) | Cross-reference for 15 validated campaigns (A1–A15) |
+| `attack scenario.pdf` | Attack evidence screenshots |
+| `baselines/CAPTAIN.py` | Baseline: differentiable tag propagation |
+| `baselines/CONTEXTS.py` | Baseline: Sigma + CVE + SBERT triage |
+| `baselines/DEPCOMM.py` | Baseline: random-walk embedding and community summarisation |
+| `baselines/HOLMES.py` | Baseline: ATT&CK kill-chain scenario graphs |
+| [`logo.svg`](./logo.svg) | Project logo |
+| [`LICENSE`](./LICENSE) | Research-only, non-commercial terms |
 
-The reference prompt instructs the client to triage outbound-only communities first, trace each one backward through the time-stitched lineage to its root cause, assign a verdict, and compile everything into a single HTML report.
+---
 
-## Baseline Reproductions
+## Baseline reproductions
 
-To situate keXDR against prior provenance-based detection work, this repository includes standalone, from-scratch reproductions of four representative baselines. Each script ingests the same rotated eBPF audit logs as `kexdr_mcp.py`, applies the baseline's core detection algorithm, and renders its own interactive HTML visualization plus a plain-text alert report — so results can be compared directly against keXDR on the same input data.
+Standalone reproductions of four representative provenance baselines. Each ingests the
+same logs, applies its own detection algorithm, and renders its own HTML visualisation
+and text report, so results can be compared on identical input.
 
-| Script | Baseline idea | Core mechanism | Output |
+| Script | Idea | Core mechanism | Output |
 |---|---|---|---|
-| `baselines/CAPTAIN.py` | Differentiable tag-propagation provenance analysis | A small PyTorch model learns per-entity initial integrity tags, per-edge-type propagation rates, and per-edge-type alarm thresholds via gradient descent over the provenance graph; anomalous events are those whose learned tag falls below their learned threshold | `captain.html` (context-isolation graph viewer), `captain.txt` |
-| `baselines/CONTEXTS.py` | Semantic, knowledge-base-grounded triage | Sigma rule matching flags candidate process-of-interest (POI) nodes, which are then scored for relevance against a CVE knowledge base using SBERT sentence embeddings (cosine similarity); the graph is pruned to POIs plus the shortest paths connecting them | `contexts.html` (Sigma/CVE-tagged graph viewer) |
-| `baselines/DEPCOMM.py` | Graph summarization via community structure | Hierarchical random walks over the provenance graph feed a Word2Vec (SkipGram) model to learn process embeddings; Fuzzy C-Means clustering assigns processes (and their neighboring resources) to possibly-overlapping communities, which are then compressed (redundant sibling-process merging) and ranked via a 4-dimensional InfoPath score (POI relevance, I/O role, node uniqueness, path length decay) | `depcomm.html` (per-community dashboard), `depcomm.txt` |
-| `baselines/HOLMES.py` | MITRE ATT&CK kill-chain correlation | A large ATT&CK rule set (Reconnaissance → Impact) tags POI nodes; causally-connected POIs are grouped into High-level Scenario Graphs (HSGs) using full descendant/ancestor reachability (not just shortest path), and a kill-chain state machine only credits a tactic toward the severity score if it is either a foundational-phase action or has a causally active upstream tactic — pruning graphs below a severity threshold | `holmes.html` (ranked HSG viewer), `holmes.txt` |
+| `baselines/CAPTAIN.py` | Differentiable tag propagation | A PyTorch model learns per-entity initial integrity tags, per-edge-type propagation rates and per-edge-type alarm thresholds by gradient descent over the graph; an event is anomalous when its learned tag falls below its learned threshold | `captain.html`, `captain.txt` |
+| `baselines/CONTEXTS.py` | Knowledge-base-grounded semantic triage | Sigma rules flag candidate process-of-interest nodes, which are scored against a CVE knowledge base with SBERT embeddings; the graph is pruned to those nodes plus the shortest paths between them | `contexts.html` |
+| `baselines/DEPCOMM.py` | Summarisation via community structure | Hierarchical random walks feed a Word2Vec model to learn process embeddings; Fuzzy C-Means assigns processes and their resources to overlapping communities, which are compressed and ranked by a four-dimensional InfoPath score | `depcomm.html`, `depcomm.txt` |
+| `baselines/HOLMES.py` | ATT&CK kill-chain correlation | An ATT&CK rule set tags nodes; causally connected ones are grouped into high-level scenario graphs by full reachability, and a kill-chain state machine credits a tactic only when it is foundational or has a causally active upstream tactic | `holmes.html`, `holmes.txt` |
 
-All four scripts share the same log-parsing conventions as the main sensor pipeline (process/file/network node types, `p_`/`f_`/`n_` ID prefixes) so their output can be cross-checked node-for-node against keXDR's own provenance graph on the campaigns listed in [`CAMPAIGN_DOSSIER.md`](./CAMPAIGN_DOSSIER.md).
+All four share the collector's log conventions, so their output can be checked
+node-for-node against keXDR's graph on the campaigns in
+[`CAMPAIGN_DOSSIER.md`](./CAMPAIGN_DOSSIER.md).
 
-## Ground-Truth Validation
+---
 
-keXDR's detection results have been cross-validated against **15 confirmed real-world attack campaigns (A1–A15)**, each traced to a specific raw audit log and independently corroborated against public CVE records and vendor threat-intel reporting (Log4j, Docker API abuse, ActiveMQ RCE, Condi/Orbit botnet, telnetd RCE, and more).
+## Ground-truth validation
 
-See [`CAMPAIGN_DOSSIER.md`](./CAMPAIGN_DOSSIER.md) for the full per-campaign breakdown, evidence mapping, and reference citations.
+Detection results have been cross-validated against **15 confirmed real-world campaigns
+(A1–A15)**, each traced to a specific raw log and corroborated against public CVE records
+and vendor reporting — Log4j, Docker API abuse, ActiveMQ RCE, Condi/Orbit botnet,
+telnetd RCE, and others. See [`CAMPAIGN_DOSSIER.md`](./CAMPAIGN_DOSSIER.md) for the
+per-campaign breakdown.
+
+---
 
 ## Dataset
 
-keXDR‘s telemetry dataset for evaluation is released from the **Zenodo** (~70 GB uncompressed), covering raw eBPF host-network(L4-L7) audit logs and reconstructed provenance graphs for all campaigns referenced above.
+keXDR's telemetry dataset for evaluation is released from **Zenodo** (~70 GB
+uncompressed), covering raw eBPF host–network (L4–L7) audit logs and reconstructed
+provenance graphs for all campaigns referenced above.
 
 | | |
 |---|---|
 | **Size** | ~70 GB (decompressed) |
 | **Contents** | Raw audit logs, rotated JSON shards, reconstructed graph snapshots |
-| **Access** | will be released after peer-review |
+| **Access** | Will be released after peer review |
 
-
-<img width="861" height="520" alt="截屏2026-07-30 21 38 08" src="https://github.com/user-attachments/assets/591dccc5-0ada-41d6-a3e4-4320b68ecff3" />
-
+<img width="861" height="520" alt="dataset" src="https://github.com/user-attachments/assets/591dccc5-0ada-41d6-a3e4-4320b68ecff3" />
 
 > Released under the same research-only terms as this repository — see [License](#license).
 
+---
+
 ## Citation
 
-If you use this code or dataset in your research, please cite the associated paper. A full citation entry will be added here upon publication.
+If you use this code or dataset, please cite the associated paper. A full citation entry
+will be added on publication.
 
 ## License
 
-This project is released under a **Research Use Only** license — see [`LICENSE`](./LICENSE) for full terms.
+Released under a **Research Use Only** licence — see [`LICENSE`](./LICENSE) for full terms.
 
-In short:
-- ✅ Free to use, modify, and redistribute for **academic and non-commercial research purposes**.
-- ❌ **Commercial use is not permitted** without prior written permission from the authors.
+- ✅ Free to use, modify and redistribute for academic and non-commercial research.
+- ❌ Commercial use requires prior written permission.
 
 ## Disclaimer
 
-This project is a research prototype released in support of academic work on provenance-based intrusion detection.
+A research prototype released in support of academic work on provenance-based intrusion
+detection. It is not a supported security product.
